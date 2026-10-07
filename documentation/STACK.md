@@ -1,4 +1,4 @@
-# Technical Stack
+# DJEAZ — Technical Stack
 
 ## Overview
 
