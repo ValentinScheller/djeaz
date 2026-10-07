@@ -22,10 +22,10 @@ Conserver l'organisation actuelle : **`djeaz/` est la racine de l'application**,
 | `djeaz/public/` | Assets statiques publics, sans secret ni donnée privée |
 | `djeaz/drizzle/` | Migrations SQL et métadonnées versionnées |
 | `djeaz/tests/{integration,e2e}/` | Tests transversaux ; tests unitaires près du code concerné |
-| `documentation/` | `PROJECT.md`, `STACK.md`, `ARCHITECTURE.md`, `CONVENTIONS.md` ; future charte graphique |
+| `documentation/` | `PROJECT.md`, `STACK.md`, `ARCHITECTURE.md`, `CONVENTIONS.md`, `GRAPHICS.md`, `AGENTS.md` et `charte-graphique-djeaz.pdf` |
 | `.github/workflows/` | Workflows GitHub Actions à la racine du dépôt |
 
-Les configurations Next.js, TypeScript, ESLint, pnpm, Drizzle et tests restent dans `djeaz/`, avec son `package.json` et son lockfile. Les fichiers d'instructions existants `djeaz/AGENTS.md` et `djeaz/CLAUDE.md` restent à cet emplacement.
+Les configurations Next.js, TypeScript, ESLint, pnpm, Drizzle et tests restent dans `djeaz/`, avec son `package.json` et son lockfile. Les instructions aux agents restent dans `documentation/AGENTS.md` ; aucun `CLAUDE.md` n'est présent.
 
 Dans chaque feature : `components/`, `schemas.ts`, `queries.server.ts`, `service.server.ts`, `actions.ts`, uniquement selon les besoins ; aucune couche repository systématique.
 

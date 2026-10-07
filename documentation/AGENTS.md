@@ -13,7 +13,8 @@ Consulter les documents selon la tâche :
 - `STACK.md` : technologies retenues.
 - `ARCHITECTURE.md` : responsabilités, données et règles métier.
 - `CONVENTIONS.md` : code, commandes, tests et livraison.
-- `charte-graphique-djeaz.pdf` : identité visuelle ; **Plus Jakarta Sans** est la police d'interface validée.
+- `GRAPHICS.md` : direction artistique ; **Plus Jakarta Sans** est la police d'interface validée.
+- `charte-graphique-djeaz.pdf` : charte visuelle.
 
 Les instructions explicites de l'utilisateur priment. Ce fichier précise le comportement des agents ; les autres sources détaillent l'implémentation. Signaler une contradiction importante. Distinguer architecture cible et code réellement existant.
 

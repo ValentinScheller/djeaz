@@ -7,7 +7,7 @@ Les chemins applicatifs sont relatifs à **`djeaz/`**. La documentation reste da
 ## 1. Langue et nommage
 
 - Documentation, commentaires utiles et interface en français ; code, routes, schéma et commits en anglais.
-- Fichiers et dossiers en `kebab-case`, sauf noms conventionnels existants (`README.md`, `AGENTS.md`, `CLAUDE.md` et documents de référence en majuscules) ; composants/types en `PascalCase` ; variables/fonctions en `camelCase` ; constantes fixes en `UPPER_SNAKE_CASE`.
+- Fichiers et dossiers en `kebab-case`, sauf noms conventionnels (`README.md`, `AGENTS.md`, `CLAUDE.md` et documents de référence en majuscules) ; composants/types en `PascalCase` ; variables/fonctions en `camelCase` ; constantes fixes en `UPPER_SNAKE_CASE`.
 - SQL en `snake_case`, tables métier au pluriel ; propriétés TypeScript en `camelCase`. Mapper explicitement le schéma Better Auth si nécessaire.
 - Imports internes via `@/` vers la racine de `djeaz/` : `"@/*": ["./*"]` dans son `tsconfig.json` ; imports relatifs courts autorisés. Exports nommés, sauf conventions Next.js imposant un export par défaut.
 - Terminologie stable : `event`, `catalog`, `genre`, `track`, `response`, `selection`, `freeRequest`. Une réponse représente un participant ; ne pas créer un second modèle invité.
@@ -62,7 +62,7 @@ Toute migration destructive documente sa sauvegarde préalable et sa reprise ; r
 
 ## 6. Interface
 
-Composants partagés et shadcn/ui ; tokens CSS centralisés pour Tailwind. L'identité visuelle sera définie dans `GRAPHIQUE.md`.
+Composants partagés et shadcn/ui ; tokens CSS centralisés pour Tailwind. L'identité visuelle est définie dans `GRAPHICS.md`.
 
 Sondage conçu pour mobile ; HTML sémantique, labels, clavier et focus visible. Prévoir chargement, vide et erreur ; signaler les mutations et confirmer les suppressions. Conserver les saisies après un échec récupérable.
 

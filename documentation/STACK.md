@@ -195,7 +195,7 @@ Les permissions et la propriété des ressources doivent toujours être vérifi�
 ### Public
 
 ```text
-/survey/{publicId}
+/survey/[publicId]
 ```
 
 Cette partie est accessible sans authentification afin de réduire au maximum les frictions pour les invités.
