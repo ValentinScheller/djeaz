@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  checks:
+    name: Vérifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: djeaz
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: djeaz
+          POSTGRES_PASSWORD: djeaz
+          POSTGRES_DB: djeaz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U djeaz -d djeaz_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+          --health-start-period 10s
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: djeaz/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: djeaz/.nvmrc
+          cache: pnpm
+          cache-dependency-path: djeaz/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check format
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      # Le test « refuse djeaz_dev » ouvre cette base avec l'URL locale figée
+      # postgresql://djeaz:djeaz@127.0.0.1:5432/djeaz_dev pour prouver qu'elle
+      # n'est pas réinitialisée. test:integration continue de cibler djeaz_test.
+      - name: Create witness database
+        run: |
+          node --input-type=module <<'EOF'
+          import { createRequire } from "node:module";
+
+          const { Pool } = createRequire(`${process.cwd()}/package.json`)("pg");
+          const pool = new Pool({
+            connectionString: "postgresql://djeaz:djeaz@127.0.0.1:5432/djeaz_test",
+            connectionTimeoutMillis: 5000,
+          });
+
+          await pool.query("CREATE DATABASE djeaz_dev");
+          await pool.end();
+          EOF
+
+      - name: Integration tests
+        run: pnpm test:integration
+        env:
+          TEST_DATABASE_URL: postgresql://djeaz:djeaz@127.0.0.1:5432/djeaz_test
+
+      - name: Read Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright Chromium
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: pnpm test:e2e
+
+      - name: Build
+        run: pnpm build
