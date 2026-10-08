@@ -1,33 +1,37 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Poids statiques : sans `weight`, next/font charge l'axe variable entier (200–800).
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plus-jakarta-sans",
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const title = "DJEAZ - Préparation musicale pour DJ";
+const description =
+  "Recueillez les préférences musicales de vos invités avant votre événement et préparez votre set avec une vision claire de votre public.";
 
 export const metadata: Metadata = {
-  title: "DJEAZ",
-  description: "DJEAZ is a platform for DJs to share their music and connect with other DJs.",
-  icons: {
-    icon: "/favicon.ico",
+  title: {
+    default: title,
+    template: "%s | DJEAZ",
   },
+  description,
   openGraph: {
-    title: "DJEAZ",
-    description: "DJEAZ is a platform for DJs to share their music and connect with other DJs.",
-    url: "https://djeaz.com",
+    title,
+    description,
+    siteName: "DJEAZ",
+    locale: "fr_FR",
+    type: "website",
   },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="fr" className={`${plusJakartaSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -113,12 +113,13 @@
   --default-transition-duration: var(--djeaz-duration-control);
   --default-transition-timing-function: var(--djeaz-ease);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plus-jakarta-sans);
 }
 
 body {
   background: var(--djeaz-background);
   color: var(--djeaz-text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
 }
