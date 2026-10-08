@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
-/* Sombre activé par .dark sur un ancêtre. P1.3 branchera préférence, choix et persistance. */
+/* Sombre activé par .dark sur <html>. Le script d'initialisation et le choix utilisateur posent cette classe. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: light;
+
   /* Marque — valeurs fixes. */
   --djeaz-indigo: #5755c9;
   --djeaz-apricot: #ffbd99;
@@ -45,6 +47,8 @@
 }
 
 .dark {
+  color-scheme: dark;
+
   /* Sémantique — sombre. Surface et bordure sont distinctes du charbon. */
   --djeaz-background: var(--djeaz-charcoal);
   --djeaz-surface: #3e4156;

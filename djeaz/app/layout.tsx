@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
+
+import { ThemeSync } from "@/components/theme-sync";
+import { themeInitScript } from "@/lib/theme";
+
 import "./globals.css";
 
-// Poids statiques : sans `weight`, next/font charge l'axe variable entier (200–800).
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Axe variable 200–800 : les poids 400, 500, 600 et 700 restent disponibles.
+const plusJakartaSans = localFont({
+  src: "./fonts/plus-jakarta-sans-wght.ttf",
+  weight: "200 800",
+  style: "normal",
   variable: "--font-plus-jakarta-sans",
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
@@ -31,8 +36,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className={`${plusJakartaSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html
+      lang="fr"
+      className={`${plusJakartaSans.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <ThemeSync />
+        {children}
+      </body>
     </html>
   );
 }
