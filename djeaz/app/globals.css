@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 /* Sombre activé par .dark sur <html>. Le script d'initialisation et le choix utilisateur posent cette classe. */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -44,6 +46,44 @@
   --djeaz-duration-control: 200ms;
   --djeaz-duration-appear: 350ms;
   --djeaz-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Public par défaut. Le dashboard resserre la cible et atténue le relief. */
+  --djeaz-control-size: 2.75rem;
+  --djeaz-control-size-compact: 2.75rem;
+  --djeaz-shadow-raised: var(--djeaz-shadow-public);
+
+  /* Alias shadcn : ils lisent les tokens DJEAZ, y compris après le changement .dark. */
+  --background: var(--djeaz-background);
+  --foreground: var(--djeaz-text);
+  --card: var(--djeaz-surface);
+  --card-foreground: var(--djeaz-text);
+  --popover: var(--djeaz-surface);
+  --popover-foreground: var(--djeaz-text);
+  --primary: var(--djeaz-action);
+  --primary-foreground: var(--djeaz-action-foreground);
+  --secondary: color-mix(in srgb, var(--djeaz-text) 6%, var(--djeaz-surface));
+  --secondary-foreground: var(--djeaz-text);
+  --muted: color-mix(in srgb, var(--djeaz-text) 6%, var(--djeaz-background));
+  --muted-foreground: var(--djeaz-text-secondary);
+  --accent: color-mix(in srgb, var(--djeaz-action) 12%, var(--djeaz-surface));
+  --accent-foreground: var(--djeaz-text);
+  --destructive: var(--djeaz-error);
+  --border: var(--djeaz-border);
+  --input: var(--djeaz-border);
+  --ring: var(--djeaz-focus);
+  --radius: var(--djeaz-radius-field);
+}
+
+[data-intensity="public"] {
+  --djeaz-control-size: 2.75rem;
+  --djeaz-control-size-compact: 2.75rem;
+  --djeaz-shadow-raised: var(--djeaz-shadow-public);
+}
+
+[data-intensity="dashboard"] {
+  --djeaz-control-size: 2.5rem;
+  --djeaz-control-size-compact: 2.25rem;
+  --djeaz-shadow-raised: var(--djeaz-shadow-dashboard);
 }
 
 .dark {
@@ -78,6 +118,15 @@
     --djeaz-duration-control: 0.01ms;
     --djeaz-duration-appear: 0.01ms;
   }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Exposition aux utilities. L'espacement reste l'échelle native --spacing (0,25 rem). */
@@ -104,12 +153,40 @@
   --color-warning: var(--djeaz-warning);
   --color-warning-background: var(--djeaz-warning-background);
 
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --radius-field: var(--djeaz-radius-field);
   --radius-card: var(--djeaz-radius-card);
   --radius-pill: var(--djeaz-radius-pill);
+  --radius-sm: 8px;
+  --radius-md: var(--djeaz-radius-field);
+  --radius-lg: var(--djeaz-radius-field);
+  --radius-xl: var(--djeaz-radius-card);
+  --radius-2xl: var(--djeaz-radius-card);
+  --radius-3xl: var(--djeaz-radius-card);
+  --radius-4xl: var(--djeaz-radius-pill);
 
   --shadow-public: var(--djeaz-shadow-public);
   --shadow-dashboard: var(--djeaz-shadow-dashboard);
+  --shadow-raised: var(--djeaz-shadow-raised);
+
+  --spacing-control: var(--djeaz-control-size);
+  --spacing-control-compact: var(--djeaz-control-size-compact);
 
   --ease-standard: var(--djeaz-ease);
   --transition-duration-control: var(--djeaz-duration-control);
@@ -126,4 +203,10 @@ body {
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
+}
+
+@layer base {
+  * {
+    border-color: var(--djeaz-border);
+  }
 }
