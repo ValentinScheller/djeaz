@@ -1,26 +1,124 @@
 @import "tailwindcss";
 
+/* Sombre activé par .dark sur un ancêtre. P1.3 branchera préférence, choix et persistance. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Marque — valeurs fixes. */
+  --djeaz-indigo: #5755c9;
+  --djeaz-apricot: #ffbd99;
+  --djeaz-ivory: #faf9f6;
+  --djeaz-charcoal: #252631;
+
+  /* Sémantique — clair. Les neutres et les états ne sont pas des couleurs de marque. */
+  --djeaz-background: var(--djeaz-ivory);
+  --djeaz-surface: #ffffff;
+  --djeaz-text: var(--djeaz-charcoal);
+  --djeaz-text-secondary: #5a5c6a;
+  --djeaz-action: var(--djeaz-indigo);
+  --djeaz-action-foreground: var(--djeaz-ivory);
+  --djeaz-selection: var(--djeaz-apricot);
+  --djeaz-selection-foreground: var(--djeaz-charcoal);
+  --djeaz-border: #8f8b80;
+  --djeaz-focus: var(--djeaz-indigo);
+  --djeaz-success: #146c43;
+  --djeaz-success-background: #e7f6ee;
+  --djeaz-error: #b42318;
+  --djeaz-error-background: #fdecec;
+  --djeaz-warning: #8a4b00;
+  --djeaz-warning-background: #fff3d6;
+
+  --djeaz-radius-field: 12px;
+  --djeaz-radius-card: 16px;
+  --djeaz-radius-pill: 9999px;
+
+  --djeaz-shadow-public:
+    0 16px 40px -12px color-mix(in srgb, var(--djeaz-charcoal) 22%, transparent),
+    0 4px 12px -4px color-mix(in srgb, var(--djeaz-charcoal) 10%, transparent);
+  --djeaz-shadow-dashboard:
+    0 1px 2px color-mix(in srgb, var(--djeaz-charcoal) 6%, transparent),
+    0 2px 8px -4px color-mix(in srgb, var(--djeaz-charcoal) 5%, transparent);
+
+  --djeaz-duration-control: 200ms;
+  --djeaz-duration-appear: 350ms;
+  --djeaz-ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
+.dark {
+  /* Sémantique — sombre. Surface et bordure sont distinctes du charbon. */
+  --djeaz-background: var(--djeaz-charcoal);
+  --djeaz-surface: #3e4156;
+  --djeaz-text: var(--djeaz-ivory);
+  --djeaz-text-secondary: #c4c2d0;
+  /* L'indigo de marque passe sous 3:1 sur le charbon : nuance fonctionnelle, texte charbon. */
+  --djeaz-action: #9493dd;
+  --djeaz-action-foreground: var(--djeaz-charcoal);
+  --djeaz-selection: var(--djeaz-apricot);
+  --djeaz-selection-foreground: var(--djeaz-charcoal);
+  --djeaz-border: #8e90a8;
+  /* L'indigo de marque ne fait pas un anneau lisible sur le charbon. */
+  --djeaz-focus: var(--djeaz-ivory);
+  --djeaz-success: #6fd4a4;
+  --djeaz-success-background: #143528;
+  --djeaz-error: #f0a8a2;
+  --djeaz-error-background: #3d2224;
+  --djeaz-warning: #f0c36a;
+  --djeaz-warning-background: #3a2e14;
+
+  --djeaz-shadow-public: 0 18px 44px -14px rgb(0 0 0 / 0.62);
+  --djeaz-shadow-dashboard: 0 1px 2px rgb(0 0 0 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --djeaz-duration-control: 0.01ms;
+    --djeaz-duration-appear: 0.01ms;
+  }
+}
+
+/* Exposition aux utilities. L'espacement reste l'échelle native --spacing (0,25 rem). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-indigo: var(--djeaz-indigo);
+  --color-apricot: var(--djeaz-apricot);
+  --color-ivory: var(--djeaz-ivory);
+  --color-charcoal: var(--djeaz-charcoal);
+
+  --color-background: var(--djeaz-background);
+  --color-surface: var(--djeaz-surface);
+  --color-text: var(--djeaz-text);
+  --color-text-secondary: var(--djeaz-text-secondary);
+  --color-action: var(--djeaz-action);
+  --color-action-foreground: var(--djeaz-action-foreground);
+  --color-selection: var(--djeaz-selection);
+  --color-selection-foreground: var(--djeaz-selection-foreground);
+  --color-border: var(--djeaz-border);
+  --color-focus: var(--djeaz-focus);
+  --color-success: var(--djeaz-success);
+  --color-success-background: var(--djeaz-success-background);
+  --color-error: var(--djeaz-error);
+  --color-error-background: var(--djeaz-error-background);
+  --color-warning: var(--djeaz-warning);
+  --color-warning-background: var(--djeaz-warning-background);
+
+  --radius-field: var(--djeaz-radius-field);
+  --radius-card: var(--djeaz-radius-card);
+  --radius-pill: var(--djeaz-radius-pill);
+
+  --shadow-public: var(--djeaz-shadow-public);
+  --shadow-dashboard: var(--djeaz-shadow-dashboard);
+
+  --ease-standard: var(--djeaz-ease);
+  --transition-duration-control: var(--djeaz-duration-control);
+  --transition-duration-appear: var(--djeaz-duration-appear);
+  --default-transition-duration: var(--djeaz-duration-control);
+  --default-transition-timing-function: var(--djeaz-ease);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--djeaz-background);
+  color: var(--djeaz-text);
   font-family: Arial, Helvetica, sans-serif;
 }
