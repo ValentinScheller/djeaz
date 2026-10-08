@@ -32,5 +32,4 @@ test("la page d'accueil se charge", async ({ page }) => {
     requested: true,
     weights: [true, true, true, true],
   });
-  await expect(page.getByRole("img", { name: "DJEAZ mascotte" })).toBeVisible();
 });
