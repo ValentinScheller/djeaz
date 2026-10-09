@@ -134,6 +134,8 @@ test("le premier rendu serveur reste la mascotte statique", () => {
   const html = renderToString(<AnimatedMascot alt="Célébration" />);
 
   expect(html).toContain("/mascotte.svg");
+  expect(html).toContain("scale-[61%]");
+  expect(html).toContain("translate-y-[1.15%]");
   expect(html).not.toContain(FLOATY_SRC);
   expect(html).not.toContain(BACKFLIP_SRC);
   expect(html).not.toContain("mascotte-animated-happy.mp4");

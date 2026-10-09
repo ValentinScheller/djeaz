@@ -8,6 +8,14 @@ import { Mascot } from "@/components/brand/mascot";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
+/**
+ * Chaque fichier .lottie place la couche « mascotte » à 61 % d'une
+ * composition 800×800, environ 1,15 % sous le centre. Le SVG statique
+ * remplit tout son cadre : on reprend ce cadrage pour éviter le saut
+ * au chargement du premier frame.
+ */
+const STATIC_FALLBACK_SCALE = "origin-center scale-[61%] translate-y-[1.15%]";
+
 const MASCOT_ANIMATIONS = {
   floaty: "/mascotte-animated-floaty.lottie",
   backflip: "/mascotte-animated-backflip.lottie",
@@ -180,7 +188,11 @@ export function AnimatedMascot({
       <Mascot
         alt=""
         sizes="15rem"
-        className={cn("absolute inset-0 size-full object-contain", animationReady && "invisible")}
+        className={cn(
+          "absolute inset-0 size-full object-contain",
+          STATIC_FALLBACK_SCALE,
+          animationReady && "invisible",
+        )}
       />
       {showPlayer ? (
         <DotLottieReact
