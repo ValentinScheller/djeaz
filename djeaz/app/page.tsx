@@ -1,12 +1,12 @@
-import Image from "next/image";
-
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center font-sans">
-      {/* Emplacement temporaire : le contrôle rejoint les coques en P1.6. */}
-      <ThemeToggle />
-    </div>
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-4 py-8 sm:px-6">
+      <header className="flex max-w-full flex-col gap-4">
+        <h1 className="text-2xl font-semibold">DJEAZ - Préparation musicale pour DJ</h1>
+        <ThemeToggle />
+      </header>
+    </main>
   );
 }
