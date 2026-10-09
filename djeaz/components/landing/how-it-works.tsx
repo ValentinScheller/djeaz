@@ -36,8 +36,8 @@ export function HowItWorks() {
             Comment ça marche ?
           </h2>
           <p className="mt-3 max-w-prose text-pretty text-text-secondary">
-            Créez votre événement une fois, partagez-le et laissez DJEAZ faire remonter
-            les tendances avant le jour J.
+            Créez votre événement une fois, partagez-le et laissez DJEAZ faire remonter les
+            tendances avant le jour J.
           </p>
         </div>
         <ol className="grid min-w-0 list-none gap-4 md:grid-cols-3 md:gap-6">

@@ -20,7 +20,8 @@ export function LandingHero() {
             Votre set commence bien avant le premier morceau.
           </h1>
           <p className="max-w-prose text-pretty text-text-secondary">
-            Recueillez les goûts de vos invités en amont et préparez votre soirée avec autre chose que des suppositions.
+            Recueillez les goûts de vos invités en amont et préparez votre soirée avec autre chose
+            que des suppositions.
           </p>
           <div className="flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center lg:justify-start">
             <Link

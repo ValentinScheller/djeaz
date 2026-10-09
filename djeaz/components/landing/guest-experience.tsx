@@ -30,12 +30,10 @@ export function GuestExperience() {
             Un sondage auquel les invités ont vraiment envie de répondre.
           </h2>
           <p className="mt-3 max-w-prose text-pretty">
-            Pas de formulaire interminable : ils parcourent la musique, sélectionnent leurs coups de cœur
-            et peuvent ajouter leurs propres envies.
+            Pas de formulaire interminable : ils parcourent la musique, sélectionnent leurs coups de
+            cœur et peuvent ajouter leurs propres envies.
           </p>
-          <p className="mt-3 max-w-prose text-pretty">
-            C’est tout ce qu’il faut pour participer.
-          </p>
+          <p className="mt-3 max-w-prose text-pretty">C’est tout ce qu’il faut pour participer.</p>
           <p className="mt-3 max-w-prose text-pretty">
             Aucune inscription et aucune application à installer.
           </p>
