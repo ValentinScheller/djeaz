@@ -34,12 +34,9 @@ test("la vitrine explique le produit et mène vers l'espace DJ", () => {
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(screen.getByText(/préparez votre soirée/i)).toBeInTheDocument();
 
-  expect(screen.getByRole("link", { name: "Créer mon espace DJ" })).toHaveAttribute(
-    "href",
-    "/sign-up",
-  );
+  expect(screen.queryByRole("link", { name: "Créer mon espace DJ" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Se connecter" })).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Je me lance !" })).toHaveAttribute("href", "/sign-up");
-  expect(screen.getByRole("link", { name: "Se connecter" })).toHaveAttribute("href", "/sign-in");
   expect(screen.getByRole("link", { name: "J'ai déjà un compte" })).toHaveAttribute(
     "href",
     "/sign-in",

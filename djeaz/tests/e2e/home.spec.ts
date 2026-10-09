@@ -45,17 +45,11 @@ test("la vitrine présente la promesse, le parcours et les accès DJ", async ({ 
     }),
   ).toBeVisible();
 
-  await expect(page.getByRole("link", { name: "Créer mon espace DJ" })).toHaveAttribute(
-    "href",
-    "/sign-up",
-  );
+  await expect(page.getByRole("link", { name: "Créer mon espace DJ" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Se connecter" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Je me lance !" })).toHaveAttribute(
     "href",
     "/sign-up",
-  );
-  await expect(page.getByRole("link", { name: "Se connecter" })).toHaveAttribute(
-    "href",
-    "/sign-in",
   );
   await expect(page.getByRole("link", { name: "J'ai déjà un compte" })).toHaveAttribute(
     "href",

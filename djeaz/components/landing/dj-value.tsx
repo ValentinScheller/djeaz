@@ -16,15 +16,20 @@ const points: ReadonlyArray<{ label: string; icon: LucideIcon }> = [
 export function DjValue() {
   return (
     <section aria-labelledby="dj-value" className="px-4 py-14 sm:px-6 sm:py-20">
-      <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-8">
-        <div className="max-w-2xl">
+      <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-8">
+        <div>
           <h2 id="dj-value" className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
             Des indices pour préparer votre set. Votre feeling fait le reste.
           </h2>
-          <p className="mt-3 max-w-prose text-pretty text-text-secondary">
-            Genres populaires, morceaux qui reviennent, demandes particulières : DJEAZ fait
-            ressortir les goûts et les tendances du public. Vous gardez toute la liberté de
-            construire votre set, votre progression et votre ambiance.
+          <p className="mt-3 text-pretty text-text-secondary">
+            <span className="xl:block">
+              Genres populaires, morceaux qui reviennent, demandes particulières : DJEAZ fait
+              ressortir les goûts et les tendances du public.
+            </span>{" "}
+            <span className="xl:block">
+              Vous gardez toute la liberté de construire votre set, votre progression et votre
+              ambiance.
+            </span>
           </p>
         </div>
         <ul className="grid min-w-0 list-none gap-4 sm:grid-cols-2">

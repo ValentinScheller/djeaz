@@ -129,6 +129,16 @@
   }
 }
 
+@keyframes djeaz-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(0.3rem);
+  }
+}
+
 /* Exposition aux utilities. L'espacement reste l'échelle native --spacing (0,25 rem). */
 @theme inline {
   --color-indigo: var(--djeaz-indigo);
@@ -195,6 +205,8 @@
   --default-transition-timing-function: var(--djeaz-ease);
 
   --font-sans: var(--font-plus-jakarta-sans);
+
+  --animate-landing-float: djeaz-float 2.8s var(--djeaz-ease) infinite;
 }
 
 body {

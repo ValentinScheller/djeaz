@@ -28,14 +28,14 @@ export function HowItWorks() {
   return (
     <section aria-labelledby="how-it-works" className="px-4 py-14 sm:px-6 sm:py-20">
       <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-8 sm:gap-10">
-        <div className="max-w-2xl">
+        <div>
           <h2
             id="how-it-works"
             className="text-balance text-3xl font-bold tracking-tight sm:text-4xl"
           >
             Comment ça marche ?
           </h2>
-          <p className="mt-3 max-w-prose text-pretty text-text-secondary">
+          <p className="mt-3 max-w-none text-balance text-text-secondary">
             Créez votre événement une fois, partagez-le et laissez DJEAZ faire remonter les
             tendances avant le jour J.
           </p>
