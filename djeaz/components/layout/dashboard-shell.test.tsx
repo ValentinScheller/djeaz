@@ -47,6 +47,7 @@ test("la navigation indique la page active et l'identité factice", () => {
   expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   expect(screen.getByRole("link", { name: "Paramètres" })).not.toHaveAttribute("aria-current");
   expect(screen.getByRole("link", { name: "Catalogue" })).toHaveAttribute("href", "/catalog");
+  expect(document.querySelector('img[src="/mascotte.svg"]')).toHaveAttribute("alt", "");
   expect(screen.getByRole("button", { name: /DJ Démo/ })).toBeInTheDocument();
   expect(screen.getByText("dj@example.test")).toBeInTheDocument();
 

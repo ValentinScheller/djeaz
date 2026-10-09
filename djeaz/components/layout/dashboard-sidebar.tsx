@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
+import { Mascot } from "@/components/brand/mascot";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import { DashboardNav } from "./dashboard-nav";
@@ -17,6 +18,9 @@ export function DashboardSidebar() {
           <Logo alt="" className="w-full" />
           <span className="sr-only">DJEAZ, tableau de bord</span>
         </Link>
+        <div className="flex justify-center lg:hidden">
+          <Mascot alt="" className="w-12" sizes="3rem" />
+        </div>
         <DashboardNav responsive />
         <div className="mt-auto flex min-w-0 flex-col gap-3">
           <div className="hidden min-w-0 lg:block">
