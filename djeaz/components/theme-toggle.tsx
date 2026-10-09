@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import {
   applyThemePreference,
@@ -17,24 +17,57 @@ const THEME_OPTIONS = [
   { value: "dark", label: "Sombre" },
 ] as const satisfies ReadonlyArray<{ value: ThemeChoice; label: string }>;
 
-export function ThemeToggle() {
+const THEME_CHANGE_EVENT = "djeaz-theme-change";
+
+type ThemeToggleProps = {
+  /**
+   * Nom du groupe radio. À rendre unique lorsque plusieurs bascules
+   * sont montées ensemble, par exemple sidebar et barre mobile.
+   */
+  name?: string;
+};
+
+function storedChoice() {
+  return themeChoiceFromPreference(readStoredThemePreference());
+}
+
+function checkStoredChoice(fieldset: HTMLFieldSetElement | null) {
+  const input = fieldset?.querySelector<HTMLInputElement>(`input[value="${storedChoice()}"]`);
+
+  if (input) {
+    input.checked = true;
+  }
+}
+
+export function ThemeToggle({ name = "djeaz-theme" }: ThemeToggleProps) {
   const fieldsetRef = useRef<HTMLFieldSetElement>(null);
 
   // Le HTML initial coche « Système » pour rester identique au rendu serveur.
   // La préférence réelle est appliquée ici, avant peinture, sans second rendu.
   useLayoutEffect(() => {
-    const choice = themeChoiceFromPreference(readStoredThemePreference());
-    const input = fieldsetRef.current?.querySelector<HTMLInputElement>(`input[value="${choice}"]`);
+    checkStoredChoice(fieldsetRef.current);
+  }, []);
 
-    if (input) {
-      input.checked = true;
+  // Plusieurs bascules peuvent être montées (une seule visible). Un changement
+  // dans l'une aligne les autres sans second système de thème.
+  useEffect(() => {
+    function onThemeChange() {
+      checkStoredChoice(fieldsetRef.current);
     }
+
+    window.addEventListener(THEME_CHANGE_EVENT, onThemeChange);
+    window.addEventListener("storage", onThemeChange);
+    return () => {
+      window.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
+      window.removeEventListener("storage", onThemeChange);
+    };
   }, []);
 
   function select(next: ThemeChoice) {
     const preference = preferenceFromThemeChoice(next);
     persistThemePreference(preference);
     applyThemePreference(preference);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }
 
   return (
@@ -56,7 +89,7 @@ export function ThemeToggle() {
           >
             <input
               type="radio"
-              name="djeaz-theme"
+              name={name}
               value={option.value}
               defaultChecked={option.value === "system"}
               onChange={() => select(option.value)}

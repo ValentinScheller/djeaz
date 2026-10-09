@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
+import { AppProviders } from "@/components/providers/app-providers";
 import { ThemeSync } from "@/components/theme-sync";
 import { themeInitScript } from "@/lib/theme";
 
@@ -44,9 +45,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col">
         <ThemeSync />
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
