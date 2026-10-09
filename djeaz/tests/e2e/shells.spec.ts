@@ -9,7 +9,7 @@ test("la coque publique propose le logo, la connexion et l'inscription", async (
   await expect(page.getByRole("link", { name: "Inscription" })).toHaveAttribute("href", "/sign-up");
   await expect(page.getByRole("button", { name: "Passer en mode sombre" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "DJEAZ - Préparation musicale pour DJ" }),
+    page.getByRole("heading", { name: "Votre set commence bien avant le premier morceau." }),
   ).toBeVisible();
 
   const overflow = await page.evaluate(

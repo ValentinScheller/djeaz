@@ -33,3 +33,42 @@ test("la page d'accueil se charge", async ({ page }) => {
     weights: [true, true, true, true],
   });
 });
+
+test("la vitrine présente la promesse, le parcours et les accès DJ", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Votre set commence bien avant le premier morceau.",
+    }),
+  ).toBeVisible();
+
+  await expect(page.getByRole("link", { name: "Créer mon espace DJ" })).toHaveAttribute(
+    "href",
+    "/sign-up",
+  );
+  await expect(page.getByRole("link", { name: "Je me lance !" })).toHaveAttribute(
+    "href",
+    "/sign-up",
+  );
+  await expect(page.getByRole("link", { name: "Se connecter" })).toHaveAttribute(
+    "href",
+    "/sign-in",
+  );
+  await expect(page.getByRole("link", { name: "J'ai déjà un compte" })).toHaveAttribute(
+    "href",
+    "/sign-in",
+  );
+
+  await expect(page.getByRole("heading", { name: "Comment ça marche ?" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Un sondage auquel les invités ont vraiment envie de répondre.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Vous gardez toute la liberté de construire votre set/),
+  ).toBeVisible();
+});
