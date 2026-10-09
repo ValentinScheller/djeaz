@@ -27,7 +27,7 @@ test.describe("thème", () => {
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
     await expect(page.locator("body")).toHaveCSS("background-color", charcoal);
-    await expect(page.getByRole("radio", { name: "Système" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode clair" })).toBeVisible();
   });
 
   test("sans préférence, un navigateur clair charge la page en clair", async ({ page }) => {
@@ -37,31 +37,33 @@ test.describe("thème", () => {
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     await expect(page.locator("html")).toHaveCSS("color-scheme", "light");
     await expect(page.locator("body")).toHaveCSS("background-color", ivory);
-    await expect(page.getByRole("radio", { name: "Système" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode sombre" })).toBeVisible();
   });
 
   test("le choix sombre survit au rechargement", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/");
-    await page.getByRole("radio", { name: "Sombre" }).check();
+    await page.getByRole("button", { name: "Passer en mode sombre" }).click();
 
     await expect(page.locator("html")).toHaveClass(/dark/);
+    expect(await page.evaluate(() => localStorage.getItem("djeaz-theme"))).toBe("dark");
     await page.reload();
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(page.locator("body")).toHaveCSS("background-color", charcoal);
-    await expect(page.getByRole("radio", { name: "Sombre" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode clair" })).toBeVisible();
   });
 
   test("le choix clair survit au rechargement", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");
-    await page.getByRole("radio", { name: "Clair" }).check();
+    await page.getByRole("button", { name: "Passer en mode clair" }).click();
 
     await expect(page.locator("html")).not.toHaveClass(/dark/);
+    expect(await page.evaluate(() => localStorage.getItem("djeaz-theme"))).toBe("light");
     await page.reload();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     await expect(page.locator("body")).toHaveCSS("background-color", ivory);
-    await expect(page.getByRole("radio", { name: "Clair" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode sombre" })).toBeVisible();
   });
 
   test("une préférence sombre mémorisée prime sur un système clair", async ({ page }) => {
@@ -73,7 +75,7 @@ test.describe("thème", () => {
 
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(page.locator("body")).toHaveCSS("background-color", charcoal);
-    await expect(page.getByRole("radio", { name: "Sombre" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode clair" })).toBeVisible();
   });
 
   test("une préférence claire mémorisée prime sur un système sombre", async ({ page }) => {
@@ -85,7 +87,7 @@ test.describe("thème", () => {
 
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     await expect(page.locator("body")).toHaveCSS("background-color", ivory);
-    await expect(page.getByRole("radio", { name: "Clair" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode sombre" })).toBeVisible();
   });
 
   test("une valeur mémorisée inconnue suit le navigateur", async ({ page }) => {
@@ -96,20 +98,20 @@ test.describe("thème", () => {
     await page.goto("/");
 
     await expect(page.locator("html")).toHaveClass(/dark/);
-    await expect(page.getByRole("radio", { name: "Système" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode clair" })).toBeVisible();
   });
 
-  test("revenir à Système retire la préférence et suit le navigateur", async ({ page }) => {
+  test("une valeur system mémorisée suit le navigateur", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" });
+    await page.addInitScript(() => {
+      localStorage.setItem("djeaz-theme", "system");
+    });
     await page.goto("/");
-    await page.getByRole("radio", { name: "Clair" }).check();
-    await expect(page.locator("html")).not.toHaveClass(/dark/);
-
-    await page.getByRole("radio", { name: "Système" }).check();
 
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(page.locator("body")).toHaveCSS("background-color", charcoal);
-    expect(await page.evaluate(() => localStorage.getItem("djeaz-theme"))).toBeNull();
+    await expect(page.getByRole("button", { name: "Passer en mode clair" })).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem("djeaz-theme"))).toBe("system");
   });
 
   test("sans préférence, un changement système met à jour la page ouverte", async ({ page }) => {
@@ -120,27 +122,30 @@ test.describe("thème", () => {
     await page.emulateMedia({ colorScheme: "dark" });
 
     await expect(page.locator("html")).toHaveClass(/dark/);
-    await expect(page.getByRole("radio", { name: "Système" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode clair" })).toBeVisible();
   });
 
   test("un choix explicite ignore un changement système", async ({ page }) => {
-    await page.emulateMedia({ colorScheme: "light" });
+    await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");
-    await page.getByRole("radio", { name: "Clair" }).check();
+    await page.getByRole("button", { name: "Passer en mode clair" }).click();
 
+    await page.emulateMedia({ colorScheme: "light" });
     await page.emulateMedia({ colorScheme: "dark" });
 
     await expect(page.locator("html")).not.toHaveClass(/dark/);
-    await expect(page.getByRole("radio", { name: "Clair" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Passer en mode sombre" })).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem("djeaz-theme"))).toBe("light");
   });
 
-  test("le contrôle se parcourt au clavier", async ({ page }) => {
+  test("le contrôle s'active au clavier", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/");
-    await page.getByRole("radio", { name: "Système" }).focus();
-    await page.keyboard.press("ArrowRight");
+    const toggle = page.getByRole("button", { name: "Passer en mode sombre" });
+    await toggle.focus();
+    await page.keyboard.press("Enter");
 
-    await expect(page.getByRole("radio", { name: "Clair" })).toBeChecked();
-    await expect(page.getByRole("radio", { name: "Clair" })).toBeFocused();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(page.getByRole("button", { name: "Passer en mode clair" })).toBeFocused();
   });
 });

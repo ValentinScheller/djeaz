@@ -2,7 +2,6 @@ export const THEME_STORAGE_KEY = "djeaz-theme";
 export const THEME_COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
 export type ExplicitTheme = "light" | "dark";
-export type ThemeChoice = ExplicitTheme | "system";
 export type ResolvedTheme = ExplicitTheme;
 
 export function readThemePreference(value: string | null): ExplicitTheme | null {
@@ -22,14 +21,6 @@ export function resolveTheme(
   }
 
   return prefersDark ? "dark" : "light";
-}
-
-export function themeChoiceFromPreference(preference: ExplicitTheme | null): ThemeChoice {
-  return preference ?? "system";
-}
-
-export function preferenceFromThemeChoice(choice: ThemeChoice): ExplicitTheme | null {
-  return choice === "system" ? null : choice;
 }
 
 export function readStoredThemePreference(): ExplicitTheme | null {

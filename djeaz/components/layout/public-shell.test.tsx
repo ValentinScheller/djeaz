@@ -28,7 +28,7 @@ test("la coque publique expose le logo, les accès compte et le thème", () => {
   expect(home.querySelector("img")).toHaveAttribute("src", "/logo-dark.svg");
   expect(screen.getByRole("link", { name: "Connexion" })).toHaveAttribute("href", "/sign-in");
   expect(screen.getByRole("link", { name: "Inscription" })).toHaveAttribute("href", "/sign-up");
-  expect(screen.getByRole("group", { name: "Thème" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Passer en mode sombre" })).toBeInTheDocument();
   expect(screen.getByText("Accueil")).toBeInTheDocument();
 
   const footer = screen.getByRole("contentinfo");

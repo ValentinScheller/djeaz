@@ -19,7 +19,7 @@ test("la coque sondage expose l'événement, le contenu et les actions", () => {
   expect(screen.getByRole("banner")).toBeInTheDocument();
   expect(screen.getByRole("img", { name: "DJEAZ" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { level: 1, name: eventName })).toBeInTheDocument();
-  expect(screen.getByRole("group", { name: "Thème" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Passer en mode sombre" })).toBeInTheDocument();
 
   const main = screen.getByRole("main");
   expect(main).toHaveTextContent("Morceaux proposés");

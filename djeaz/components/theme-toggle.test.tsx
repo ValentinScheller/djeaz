@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 
 import { ThemeSync } from "@/components/theme-sync";
@@ -6,6 +6,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { THEME_COLOR_SCHEME_QUERY, THEME_STORAGE_KEY } from "@/lib/theme";
 
 type MediaListener = (event: MediaQueryListEvent) => void;
+
+const toDark = "Passer en mode sombre";
+const toLight = "Passer en mode clair";
 
 function installMatchMedia(matches: boolean) {
   const listeners = new Set<MediaListener>();
@@ -37,20 +40,31 @@ function installMatchMedia(matches: boolean) {
   return {
     setMatches(next: boolean) {
       media.matches = next;
-      for (const listener of listeners) {
-        listener({ matches: next, media: media.media } as MediaQueryListEvent);
-      }
+      act(() => {
+        for (const listener of listeners) {
+          listener({ matches: next, media: media.media } as MediaQueryListEvent);
+        }
+      });
     },
   };
 }
 
-function renderTheme() {
+function renderTheme(toggles = 1) {
   return render(
     <>
       <ThemeSync />
-      <ThemeToggle />
+      {Array.from({ length: toggles }, (_, index) => (
+        <ThemeToggle key={index} />
+      ))}
     </>,
   );
+}
+
+function iconsAreHidden(button: HTMLElement) {
+  for (const icon of button.querySelectorAll("svg")) {
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+  }
+  expect(button.querySelector("svg")).toBeTruthy();
 }
 
 beforeEach(() => {
@@ -59,21 +73,57 @@ beforeEach(() => {
   vi.unstubAllGlobals();
 });
 
-test("sans préférence mémorisée, le thème suit le système", () => {
+test("sans préférence, un système clair propose la lune", () => {
+  const media = installMatchMedia(false);
+
+  renderTheme();
+
+  const button = screen.getByRole("button", { name: toDark });
+  iconsAreHidden(button);
+  expect(document.documentElement.classList.contains("dark")).toBe(false);
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+
+  media.setMatches(true);
+
+  expect(screen.getByRole("button", { name: toLight })).toBeInTheDocument();
+  expect(document.documentElement.classList.contains("dark")).toBe(true);
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+});
+
+test("sans préférence, un système sombre propose le soleil", () => {
   const media = installMatchMedia(true);
 
   renderTheme();
 
-  expect(screen.getByRole("group", { name: "Thème" })).toBeInTheDocument();
-  expect(screen.getByRole("radio", { name: "Système" })).toBeChecked();
-  expect(screen.getByRole("radio", { name: "Clair" })).not.toBeChecked();
-  expect(screen.getByRole("radio", { name: "Sombre" })).not.toBeChecked();
+  expect(screen.getByRole("button", { name: toLight })).toBeInTheDocument();
   expect(document.documentElement.classList.contains("dark")).toBe(true);
 
   media.setMatches(false);
 
+  expect(screen.getByRole("button", { name: toDark })).toBeInTheDocument();
   expect(document.documentElement.classList.contains("dark")).toBe(false);
-  expect(screen.getByRole("radio", { name: "Système" })).toBeChecked();
+});
+
+test("un clic depuis le clair enregistre le sombre", () => {
+  installMatchMedia(false);
+  renderTheme();
+
+  fireEvent.click(screen.getByRole("button", { name: toDark }));
+
+  expect(screen.getByRole("button", { name: toLight })).toBeInTheDocument();
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+  expect(document.documentElement.classList.contains("dark")).toBe(true);
+});
+
+test("un clic depuis le sombre enregistre le clair", () => {
+  installMatchMedia(true);
+  renderTheme();
+
+  fireEvent.click(screen.getByRole("button", { name: toLight }));
+
+  expect(screen.getByRole("button", { name: toDark })).toBeInTheDocument();
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+  expect(document.documentElement.classList.contains("dark")).toBe(false);
 });
 
 test("une préférence sombre mémorisée prime sur le système", () => {
@@ -82,12 +132,12 @@ test("une préférence sombre mémorisée prime sur le système", () => {
 
   renderTheme();
 
-  expect(screen.getByRole("radio", { name: "Sombre" })).toBeChecked();
+  expect(screen.getByRole("button", { name: toLight })).toBeInTheDocument();
   expect(document.documentElement.classList.contains("dark")).toBe(true);
 
   media.setMatches(true);
 
-  expect(screen.getByRole("radio", { name: "Sombre" })).toBeChecked();
+  expect(screen.getByRole("button", { name: toLight })).toBeInTheDocument();
   expect(document.documentElement.classList.contains("dark")).toBe(true);
 });
 
@@ -97,11 +147,28 @@ test("une préférence claire mémorisée prime sur le système", () => {
 
   renderTheme();
 
-  expect(screen.getByRole("radio", { name: "Clair" })).toBeChecked();
+  expect(screen.getByRole("button", { name: toDark })).toBeInTheDocument();
   expect(document.documentElement.classList.contains("dark")).toBe(false);
 
   media.setMatches(false);
 
+  expect(screen.getByRole("button", { name: toDark })).toBeInTheDocument();
+  expect(document.documentElement.classList.contains("dark")).toBe(false);
+});
+
+test("une valeur system mémorisée suit le système", () => {
+  const media = installMatchMedia(true);
+  localStorage.setItem(THEME_STORAGE_KEY, "system");
+
+  renderTheme();
+
+  expect(screen.getByRole("button", { name: toLight })).toBeInTheDocument();
+  expect(document.documentElement.classList.contains("dark")).toBe(true);
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("system");
+
+  media.setMatches(false);
+
+  expect(screen.getByRole("button", { name: toDark })).toBeInTheDocument();
   expect(document.documentElement.classList.contains("dark")).toBe(false);
 });
 
@@ -111,40 +178,34 @@ test("une valeur de stockage inconnue revient au système", () => {
 
   renderTheme();
 
-  expect(screen.getByRole("radio", { name: "Système" })).toBeChecked();
+  expect(screen.getByRole("button", { name: toLight })).toBeInTheDocument();
   expect(document.documentElement.classList.contains("dark")).toBe(true);
 });
 
-test("le choix est mémorisé et Système retire la préférence explicite", () => {
-  const media = installMatchMedia(true);
+test("les bascules montées ensemble restent synchronisées", () => {
+  installMatchMedia(false);
+  renderTheme(2);
 
-  renderTheme();
+  fireEvent.click(screen.getAllByRole("button", { name: toDark })[0]);
 
-  fireEvent.click(screen.getByRole("radio", { name: "Clair" }));
-
-  expect(screen.getByRole("radio", { name: "Clair" })).toBeChecked();
-  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
-  expect(document.documentElement.classList.contains("dark")).toBe(false);
-
-  media.setMatches(false);
-
-  expect(document.documentElement.classList.contains("dark")).toBe(false);
-
-  fireEvent.click(screen.getByRole("radio", { name: "Sombre" }));
-
-  expect(screen.getByRole("radio", { name: "Sombre" })).toBeChecked();
+  expect(screen.getAllByRole("button", { name: toLight })).toHaveLength(2);
   expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
   expect(document.documentElement.classList.contains("dark")).toBe(true);
+});
 
-  fireEvent.click(screen.getByRole("radio", { name: "Système" }));
+test("la bascule focusable garde le focus après activation", () => {
+  installMatchMedia(false);
+  renderTheme();
 
-  expect(screen.getByRole("radio", { name: "Système" })).toBeChecked();
-  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
-  expect(document.documentElement.classList.contains("dark")).toBe(false);
+  const button = screen.getByRole("button", { name: toDark });
+  button.focus();
+  expect(button).toHaveFocus();
+  expect(button.tagName).toBe("BUTTON");
 
-  media.setMatches(true);
+  fireEvent.click(button);
 
-  expect(document.documentElement.classList.contains("dark")).toBe(true);
+  expect(screen.getByRole("button", { name: toLight })).toHaveFocus();
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
 });
 
 test("le contrôle retire son écoute du système au démontage", () => {

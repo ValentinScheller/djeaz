@@ -20,7 +20,7 @@ export function DashboardSidebar() {
         <DashboardNav responsive />
         <div className="mt-auto flex min-w-0 flex-col gap-3">
           <div className="hidden min-w-0 lg:block">
-            <ThemeToggle name="djeaz-theme-sidebar" />
+            <ThemeToggle />
           </div>
           <DashboardUserMenu responsive />
         </div>

@@ -8,7 +8,7 @@ import { cn } from "cn";
 export function PublicHeader() {
   return (
     <header className="border-b border-border bg-surface shadow-public">
-      <div aria-hidden="true" className="h-1 bg-apricot" />
+      <div aria-hidden="true" className="h-1 bg-indigo dark:bg-apricot" />
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-4 sm:px-6">
         <Link
           href="/"

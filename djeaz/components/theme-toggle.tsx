@@ -1,104 +1,100 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { MoonIcon, SunIcon } from "lucide-react";
+import { useSyncExternalStore } from "react";
 
+import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 import {
   applyThemePreference,
   persistThemePreference,
-  preferenceFromThemeChoice,
+  prefersDarkColorScheme,
   readStoredThemePreference,
-  themeChoiceFromPreference,
-  type ThemeChoice,
+  resolveTheme,
+  THEME_COLOR_SCHEME_QUERY,
+  type ExplicitTheme,
+  type ResolvedTheme,
 } from "@/lib/theme";
-
-const THEME_OPTIONS = [
-  { value: "system", label: "Système" },
-  { value: "light", label: "Clair" },
-  { value: "dark", label: "Sombre" },
-] as const satisfies ReadonlyArray<{ value: ThemeChoice; label: string }>;
 
 const THEME_CHANGE_EVENT = "djeaz-theme-change";
 
-type ThemeToggleProps = {
-  /**
-   * Nom du groupe radio. À rendre unique lorsque plusieurs bascules
-   * sont montées ensemble, par exemple sidebar et barre mobile.
-   */
-  name?: string;
-};
+const iconClassName = cn(
+  "absolute inset-0 size-5 origin-center",
+  "transition-[opacity,scale,rotate] duration-control ease-standard",
+  "motion-reduce:rotate-0! motion-reduce:transition-none",
+);
 
-function storedChoice() {
-  return themeChoiceFromPreference(readStoredThemePreference());
+function readResolvedTheme(): ResolvedTheme {
+  return resolveTheme(readStoredThemePreference(), prefersDarkColorScheme());
 }
 
-function checkStoredChoice(fieldset: HTMLFieldSetElement | null) {
-  const input = fieldset?.querySelector<HTMLInputElement>(`input[value="${storedChoice()}"]`);
+function serverResolvedTheme(): ResolvedTheme {
+  return "light";
+}
 
-  if (input) {
-    input.checked = true;
+function subscribeToTheme(onStoreChange: () => void) {
+  function onStorage() {
+    applyThemePreference(readStoredThemePreference());
+    onStoreChange();
   }
+
+  window.addEventListener(THEME_CHANGE_EVENT, onStoreChange);
+  window.addEventListener("storage", onStorage);
+
+  let media: MediaQueryList | null = null;
+  try {
+    media = window.matchMedia(THEME_COLOR_SCHEME_QUERY);
+    media.addEventListener("change", onStoreChange);
+  } catch {
+    media = null;
+  }
+
+  return () => {
+    window.removeEventListener(THEME_CHANGE_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStorage);
+    media?.removeEventListener("change", onStoreChange);
+  };
 }
 
-export function ThemeToggle({ name = "djeaz-theme" }: ThemeToggleProps) {
-  const fieldsetRef = useRef<HTMLFieldSetElement>(null);
+export function ThemeToggle() {
+  const resolved = useSyncExternalStore(subscribeToTheme, readResolvedTheme, serverResolvedTheme);
 
-  // Le HTML initial coche « Système » pour rester identique au rendu serveur.
-  // La préférence réelle est appliquée ici, avant peinture, sans second rendu.
-  useLayoutEffect(() => {
-    checkStoredChoice(fieldsetRef.current);
-  }, []);
-
-  // Plusieurs bascules peuvent être montées (une seule visible). Un changement
-  // dans l'une aligne les autres sans second système de thème.
-  useEffect(() => {
-    function onThemeChange() {
-      checkStoredChoice(fieldsetRef.current);
-    }
-
-    window.addEventListener(THEME_CHANGE_EVENT, onThemeChange);
-    window.addEventListener("storage", onThemeChange);
-    return () => {
-      window.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
-      window.removeEventListener("storage", onThemeChange);
-    };
-  }, []);
-
-  function select(next: ThemeChoice) {
-    const preference = preferenceFromThemeChoice(next);
-    persistThemePreference(preference);
-    applyThemePreference(preference);
+  function toggle() {
+    const next: ExplicitTheme = readResolvedTheme() === "dark" ? "light" : "dark";
+    persistThemePreference(next);
+    applyThemePreference(next);
     window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }
 
+  const label = resolved === "dark" ? "Passer en mode clair" : "Passer en mode sombre";
+
   return (
-    <fieldset
-      ref={fieldsetRef}
-      className="m-0 flex max-w-full flex-wrap items-center gap-2 border-0 p-0"
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="shrink-0 rounded-full"
+      aria-label={label}
+      onClick={toggle}
     >
-      <legend className="px-1 text-text-secondary">Thème</legend>
-      <div className="flex max-w-full flex-wrap gap-1 rounded-card border border-border bg-surface p-1">
-        {THEME_OPTIONS.map((option) => (
-          <label
-            key={option.value}
-            className={[
-              "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-pill px-3 font-medium text-text",
-              "transition-[background-color,color] duration-control ease-standard",
-              "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus",
-              "has-[:checked]:bg-action has-[:checked]:text-action-foreground",
-            ].join(" ")}
-          >
-            <input
-              type="radio"
-              name={name}
-              value={option.value}
-              defaultChecked={option.value === "system"}
-              onChange={() => select(option.value)}
-              className="size-4 shrink-0 accent-action"
-            />
-            {option.label}
-          </label>
-        ))}
-      </div>
-    </fieldset>
+      <span className="relative block size-5">
+        <SunIcon
+          aria-hidden="true"
+          className={cn(
+            iconClassName,
+            "scale-90 -rotate-12 opacity-0",
+            "dark:scale-100! dark:rotate-0! dark:opacity-100!",
+          )}
+        />
+        <MoonIcon
+          aria-hidden="true"
+          className={cn(
+            iconClassName,
+            "scale-100 rotate-0 opacity-100",
+            "dark:scale-90! dark:rotate-12! dark:opacity-0!",
+          )}
+        />
+      </span>
+    </Button>
   );
 }
