@@ -44,6 +44,10 @@ test("la vitrine présente la promesse, le parcours et les accès DJ", async ({ 
       name: "Votre set commence bien avant le premier morceau.",
     }),
   ).toBeVisible();
+  await expect(page.getByText("Sans compte invité")).toBeVisible();
+  await expect(page.getByText("Lien + QR code")).toBeVisible();
+  await expect(page.getByText("Le DJ maîtrise à 100%")).toBeVisible();
+  await expect(page.getByText("Découvrir la solution")).toBeVisible();
 
   await expect(page.getByRole("link", { name: "Créer mon espace DJ" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Se connecter" })).toHaveCount(0);

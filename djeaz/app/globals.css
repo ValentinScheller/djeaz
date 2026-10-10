@@ -139,6 +139,26 @@
   }
 }
 
+@keyframes djeaz-bars {
+  0%,
+  100% {
+    transform: scaleY(0.62);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes djeaz-benefit-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(var(--benefit-shift, -6px));
+  }
+}
+
 /* Exposition aux utilities. L'espacement reste l'échelle native --spacing (0,25 rem). */
 @theme inline {
   --color-indigo: var(--djeaz-indigo);
@@ -207,6 +227,8 @@
   --font-sans: var(--font-plus-jakarta-sans);
 
   --animate-landing-float: djeaz-float 2.8s var(--djeaz-ease) infinite;
+  --animate-landing-bars: djeaz-bars 4s ease-in-out infinite;
+  --animate-landing-benefit: djeaz-benefit-float 5s ease-in-out infinite;
 }
 
 body {

@@ -33,6 +33,10 @@ test("la vitrine explique le produit et mène vers l'espace DJ", () => {
   ).toBeInTheDocument();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(screen.getByText(/préparez votre soirée/i)).toBeInTheDocument();
+  expect(screen.getByText("Sans compte invité")).toBeInTheDocument();
+  expect(screen.getByText("Lien + QR code")).toBeInTheDocument();
+  expect(screen.getByText("Le DJ maîtrise à 100%")).toBeInTheDocument();
+  expect(screen.getByText("Découvrir la solution")).toBeInTheDocument();
 
   expect(screen.queryByRole("link", { name: "Créer mon espace DJ" })).not.toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "Se connecter" })).not.toBeInTheDocument();
