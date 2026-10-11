@@ -15,6 +15,13 @@
       "when": 1791729226508,
       "tag": "0001_auth_rate_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791750932436,
+      "tag": "0002_artist_name",
+      "breakpoints": true
     }
   ]
 }

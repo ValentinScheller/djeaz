@@ -4,6 +4,7 @@ import type { CredentialsFormState, CredentialsValues } from "./form-state";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./password-policy";
 
 const NAME_MAX_LENGTH = 80;
+const ARTIST_NAME_MAX_LENGTH = 80;
 const EMAIL_MAX_LENGTH = 254;
 
 const nameSchema = z
@@ -11,6 +12,15 @@ const nameSchema = z
   .trim()
   .min(1, "Le nom est requis.")
   .max(NAME_MAX_LENGTH, `Le nom ne peut pas dépasser ${NAME_MAX_LENGTH} caractères.`);
+
+export const artistNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Le nom d'artiste est requis.")
+  .max(
+    ARTIST_NAME_MAX_LENGTH,
+    `Le nom d'artiste ne peut pas dépasser ${ARTIST_NAME_MAX_LENGTH} caractères.`,
+  );
 
 const emailSchema = z
   .string()
@@ -55,6 +65,7 @@ const passwordSchema = z.string().superRefine((value, context) => {
 const signUpSchema = z
   .object({
     name: nameSchema,
+    artistName: artistNameSchema,
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string(),
@@ -85,6 +96,7 @@ const signInSchema = z.object({
 
 export type SignUpInput = {
   name: string;
+  artistName: string;
   email: string;
   password: string;
 };
@@ -99,8 +111,8 @@ function readField(formData: FormData, name: string): string {
   return typeof value === "string" ? value : "";
 }
 
-function valuesFrom(name: string, email: string): CredentialsValues {
-  return { name: name.trim(), email: email.trim() };
+function valuesFrom(name: string, artistName: string, email: string): CredentialsValues {
+  return { name: name.trim(), artistName: artistName.trim(), email: email.trim() };
 }
 
 function invalidState(
@@ -113,6 +125,7 @@ function invalidState(
     const field = issue.path[0];
     if (
       (field === "name" ||
+        field === "artistName" ||
         field === "email" ||
         field === "password" ||
         field === "confirmPassword") &&
@@ -137,9 +150,14 @@ export function parseSignUp(
 ):
   | { ok: true; data: SignUpInput; values: CredentialsValues }
   | { ok: false; state: CredentialsFormState } {
-  const values = valuesFrom(readField(formData, "name"), readField(formData, "email"));
+  const values = valuesFrom(
+    readField(formData, "name"),
+    readField(formData, "artistName"),
+    readField(formData, "email"),
+  );
   const parsed = signUpSchema.safeParse({
     name: values.name,
+    artistName: values.artistName,
     email: values.email,
     password: readField(formData, "password"),
     confirmPassword: readField(formData, "confirmPassword"),
@@ -153,6 +171,7 @@ export function parseSignUp(
     ok: true,
     data: {
       name: parsed.data.name,
+      artistName: parsed.data.artistName,
       email: parsed.data.email,
       password: parsed.data.password,
     },
@@ -165,7 +184,7 @@ export function parseSignIn(
 ):
   | { ok: true; data: SignInInput; values: CredentialsValues; returnTo: string }
   | { ok: false; state: CredentialsFormState } {
-  const values = valuesFrom("", readField(formData, "email"));
+  const values = valuesFrom("", "", readField(formData, "email"));
   const parsed = signInSchema.safeParse({
     email: values.email,
     password: readField(formData, "password"),

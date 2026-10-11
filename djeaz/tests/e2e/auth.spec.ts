@@ -15,7 +15,8 @@ test("inscription, déconnexion puis connexion mènent au dashboard", async ({ p
   const password = "motdepasse";
 
   await page.goto("/sign-up");
-  await page.getByLabel("Nom").fill("DJ Test");
+  await page.getByLabel("Nom / Prénom").fill("Camille Martin");
+  await page.getByLabel("Nom d'artiste").fill("DJ Nova");
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(password);
   await page.getByLabel("Confirmation du mot de passe").fill(password);

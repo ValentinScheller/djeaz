@@ -77,6 +77,7 @@ export async function signUpAction(
   const response = await sessionResponse(
     auth.signUpEmail({
       name: parsed.data.name,
+      artistName: parsed.data.artistName,
       email: parsed.data.email,
       password: parsed.data.password,
       requestHeaders,

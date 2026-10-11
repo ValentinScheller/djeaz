@@ -46,7 +46,12 @@ async function signUp(email: string): Promise<string> {
         "content-type": "application/json",
         "x-forwarded-for": "203.0.113.80",
       },
-      body: JSON.stringify({ name: "DJ Test", email, password: validPassword }),
+      body: JSON.stringify({
+        name: "Camille Martin",
+        artistName: "DJ Nova",
+        email,
+        password: validPassword,
+      }),
     }),
   );
   const setCookie = response.headers
@@ -83,10 +88,14 @@ test("une session Better Auth valide fournit l'utilisateur en base", async () =>
   expect(result).toMatchObject({
     ok: true,
     data: {
-      user: { id: created?.id, email },
+      user: { id: created?.id, email, name: "Camille Martin", artistName: "DJ Nova" },
       session: { userId: created?.id },
     },
   });
+  if (result.ok) {
+    const artistName: string = result.data.user.artistName;
+    expect(artistName).toBe("DJ Nova");
+  }
 });
 
 test("un cookie forgé ou une session révoquée ne sont pas authentifiés", async () => {

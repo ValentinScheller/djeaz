@@ -49,6 +49,7 @@ async function insertUser(id: string, email: string): Promise<void> {
   await db.insert(user).values({
     id,
     name: "DJ",
+    artistName: "DJ",
     email,
   });
 }

@@ -64,7 +64,7 @@ beforeEach(() => {
 
 const success: CredentialsFormState = {
   fieldErrors: {},
-  values: { name: "", email: "dj@example.com" },
+  values: { name: "", artistName: "", email: "dj@example.com" },
   ticket: "authenticated",
   redirectTo: "/dashboard",
 };
@@ -147,7 +147,7 @@ test("une erreur serveur laisse la mascotte figée", async () => {
   signInAction.mockResolvedValue({
     fieldErrors: {},
     formError: "Trop de tentatives. Réessayez dans quelques instants.",
-    values: { name: "", email: "dj@example.com" },
+    values: { name: "", artistName: "", email: "dj@example.com" },
     ticket: "echec",
   } satisfies CredentialsFormState);
 

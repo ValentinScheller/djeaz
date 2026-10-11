@@ -66,7 +66,13 @@ test("l'inscription crée la session et prépare le dashboard", async () => {
 
   const created = await signUpAction(
     initialCredentialsState,
-    formData({ name: "DJ Test", email, password, confirmPassword: password }),
+    formData({
+      name: "DJ Test",
+      artistName: "DJ Nova",
+      email,
+      password,
+      confirmPassword: password,
+    }),
   );
 
   expect(created.redirectTo).toBe("/dashboard");
@@ -79,6 +85,7 @@ test("l'inscription crée la session et prépare le dashboard", async () => {
   expect(users).toHaveLength(1);
   expect(users[0]?.email).toBe(email);
   expect(users[0]?.name).toBe("DJ Test");
+  expect(users[0]?.artistName).toBe("DJ Nova");
   expect(sessions).toHaveLength(1);
   expect(sessions[0]?.userId).toBe(users[0]?.id);
   expect(cookieSets.current.some((cookie) => cookie.name.includes("session_token"))).toBe(true);
@@ -87,7 +94,13 @@ test("l'inscription crée la session et prépare le dashboard", async () => {
 test("un e-mail déjà utilisé reste en français et conserve les saisies non sensibles", async () => {
   setRequestHeaders("203.0.113.91");
   const email = "deja-pris@example.com";
-  const fields = { name: "DJ Test", email, password, confirmPassword: password };
+  const fields = {
+    name: "DJ Test",
+    artistName: "DJ Nova",
+    email,
+    password,
+    confirmPassword: password,
+  };
 
   const created = await signUpAction(initialCredentialsState, formData(fields));
   expect(created.redirectTo).toBe("/dashboard");
@@ -99,7 +112,7 @@ test("un e-mail déjà utilisé reste en français et conserve les saisies non s
 
   expect(duplicate.fieldErrors.email).toBe("Un compte existe déjà avec cette adresse e-mail.");
   expect(duplicate.formError).toBeUndefined();
-  expect(duplicate.values).toEqual({ name: "Autre DJ", email });
+  expect(duplicate.values).toEqual({ name: "Autre DJ", artistName: "DJ Nova", email });
   expect(JSON.stringify(duplicate)).not.toContain(password);
   expect(await db.select().from(user)).toHaveLength(1);
 });
@@ -110,7 +123,13 @@ test("la connexion indique le dashboard ou un retour interne", async () => {
 
   const created = await signUpAction(
     initialCredentialsState,
-    formData({ name: "DJ Test", email, password, confirmPassword: password }),
+    formData({
+      name: "DJ Test",
+      artistName: "DJ Nova",
+      email,
+      password,
+      confirmPassword: password,
+    }),
   );
   expect(created.redirectTo).toBe("/dashboard");
 
@@ -185,6 +204,7 @@ test("la déconnexion invalide la session et renvoie vers la connexion", async (
     initialCredentialsState,
     formData({
       name: "DJ Test",
+      artistName: "DJ Nova",
       email: "depart@example.com",
       password,
       confirmPassword: password,

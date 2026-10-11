@@ -23,6 +23,7 @@ test("la soumission affiche la progression et désactive l'envoi", async () => {
   );
 
   render(<CredentialsForm mode="sign-in" />);
+  expect(screen.queryByLabelText("Nom d'artiste")).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Adresse e-mail"), {
     target: { value: "dj@example.com" },
   });
@@ -42,13 +43,20 @@ test("la soumission affiche la progression et désactive l'envoi", async () => {
 test("un échec conserve l'e-mail et vide le mot de passe", async () => {
   const password = "phrase-secrete";
   signUpAction.mockResolvedValue({
-    fieldErrors: { email: "Un compte existe déjà avec cette adresse e-mail." },
-    values: { name: "DJ Test", email: "dj@example.com" },
+    fieldErrors: {
+      artistName: "Le nom d'artiste est requis.",
+      email: "Un compte existe déjà avec cette adresse e-mail.",
+    },
+    values: { name: "Camille Martin", artistName: "DJ Nova", email: "dj@example.com" },
     ticket: "apres-echec",
   } satisfies CredentialsFormState);
 
   render(<CredentialsForm mode="sign-up" />);
-  fireEvent.change(screen.getByLabelText("Nom"), { target: { value: "DJ Test" } });
+  expect(screen.getByLabelText("Nom / Prénom")).toBeInTheDocument();
+  const artistName = screen.getByLabelText("Nom d'artiste");
+  expect(artistName).toHaveAttribute("autocomplete", "nickname");
+  fireEvent.change(screen.getByLabelText("Nom / Prénom"), { target: { value: "Camille Martin" } });
+  fireEvent.change(artistName, { target: { value: "DJ Nova" } });
   fireEvent.change(screen.getByLabelText("Adresse e-mail"), {
     target: { value: "dj@example.com" },
   });
@@ -58,14 +66,17 @@ test("un échec conserve l'e-mail et vide le mot de passe", async () => {
   });
   fireEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
 
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Un compte existe déjà avec cette adresse e-mail.",
-  );
-  expect(screen.getByLabelText("Nom")).toHaveValue("DJ Test");
+  const alerts = await screen.findAllByRole("alert");
+  expect(alerts).toHaveLength(2);
+  expect(alerts[0]).toHaveTextContent("Le nom d'artiste est requis.");
+  expect(alerts[1]).toHaveTextContent("Un compte existe déjà avec cette adresse e-mail.");
+  expect(screen.getByLabelText("Nom / Prénom")).toHaveValue("Camille Martin");
+  expect(screen.getByLabelText("Nom d'artiste")).toHaveValue("DJ Nova");
   expect(screen.getByLabelText("Adresse e-mail")).toHaveValue("dj@example.com");
   expect(screen.getByLabelText("Mot de passe")).toHaveValue("");
   expect(screen.getByLabelText("Confirmation du mot de passe")).toHaveValue("");
   expect(screen.getByLabelText("Adresse e-mail")).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByLabelText("Nom d'artiste")).toHaveAttribute("aria-invalid", "true");
 });
 
 test("une erreur serveur ne lance pas la transition", async () => {
@@ -73,7 +84,7 @@ test("une erreur serveur ne lance pas la transition", async () => {
   signInAction.mockResolvedValue({
     fieldErrors: {},
     formError: "Adresse e-mail ou mot de passe incorrect.",
-    values: { name: "", email: "dj@example.com" },
+    values: { name: "", artistName: "", email: "dj@example.com" },
     ticket: "echec",
   } satisfies CredentialsFormState);
 
@@ -95,7 +106,7 @@ test("un succès verrouille le formulaire et annonce la destination du serveur",
   const onAuthenticated = vi.fn();
   signInAction.mockResolvedValue({
     fieldErrors: {},
-    values: { name: "", email: "dj@example.com" },
+    values: { name: "", artistName: "", email: "dj@example.com" },
     ticket: "authenticated",
     redirectTo: "/dashboard",
   } satisfies CredentialsFormState);
@@ -118,7 +129,7 @@ test("la connexion reprend la destination interne renvoyée par le serveur", asy
   const onAuthenticated = vi.fn();
   signInAction.mockResolvedValue({
     fieldErrors: {},
-    values: { name: "", email: "dj@example.com" },
+    values: { name: "", artistName: "", email: "dj@example.com" },
     ticket: "authenticated",
     redirectTo: "/catalog",
   } satisfies CredentialsFormState);
@@ -141,17 +152,49 @@ test("la connexion reprend la destination interne renvoyée par le serveur", asy
   expect(onAuthenticated).toHaveBeenCalledWith("/catalog");
 });
 
+test("l'inscription en cours désactive aussi le nom d'artiste", async () => {
+  let finish: (state: CredentialsFormState) => void = () => {};
+  signUpAction.mockImplementation(
+    () =>
+      new Promise<CredentialsFormState>((resolve) => {
+        finish = resolve;
+      }),
+  );
+
+  render(<CredentialsForm mode="sign-up" />);
+  fireEvent.change(screen.getByLabelText("Nom / Prénom"), { target: { value: "Camille Martin" } });
+  fireEvent.change(screen.getByLabelText("Nom d'artiste"), { target: { value: "DJ Nova" } });
+  fireEvent.change(screen.getByLabelText("Adresse e-mail"), {
+    target: { value: "dj@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Mot de passe"), { target: { value: "motdepasse" } });
+  fireEvent.change(screen.getByLabelText("Confirmation du mot de passe"), {
+    target: { value: "motdepasse" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
+
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: "Inscription en cours…" })).toBeDisabled();
+  });
+  expect(screen.getByLabelText("Nom d'artiste")).toBeDisabled();
+  expect(screen.getByLabelText("Nom / Prénom")).toBeDisabled();
+  expect(screen.getByLabelText("Adresse e-mail")).toBeDisabled();
+
+  finish(initialCredentialsState);
+});
+
 test("une destination invalide retombe sur le dashboard", async () => {
   const onAuthenticated = vi.fn();
   signUpAction.mockResolvedValue({
     fieldErrors: {},
-    values: { name: "DJ Test", email: "dj@example.com" },
+    values: { name: "Camille Martin", artistName: "DJ Nova", email: "dj@example.com" },
     ticket: "authenticated",
     redirectTo: "https://evil.example",
   } satisfies CredentialsFormState);
 
   render(<CredentialsForm mode="sign-up" onAuthenticated={onAuthenticated} />);
-  fireEvent.change(screen.getByLabelText("Nom"), { target: { value: "DJ Test" } });
+  fireEvent.change(screen.getByLabelText("Nom / Prénom"), { target: { value: "Camille Martin" } });
+  fireEvent.change(screen.getByLabelText("Nom d'artiste"), { target: { value: "DJ Nova" } });
   fireEvent.change(screen.getByLabelText("Adresse e-mail"), {
     target: { value: "dj@example.com" },
   });

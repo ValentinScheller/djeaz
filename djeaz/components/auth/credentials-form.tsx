@@ -103,16 +103,28 @@ export function CredentialsForm({ mode, returnTo, onAuthenticated }: Credentials
       {state.formError ? <FieldError id="credentials-error" message={state.formError} /> : null}
       <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
         {mode === "sign-up" ? (
-          <AuthField
-            id="name"
-            name="name"
-            label="Nom"
-            type="text"
-            autoComplete="name"
-            defaultValue={state.values.name}
-            error={state.fieldErrors.name}
-            ticket={state.ticket}
-          />
+          <>
+            <AuthField
+              id="name"
+              name="name"
+              label="Nom / Prénom"
+              type="text"
+              autoComplete="name"
+              defaultValue={state.values.name}
+              error={state.fieldErrors.name}
+              ticket={state.ticket}
+            />
+            <AuthField
+              id="artist-name"
+              name="artistName"
+              label="Nom d'artiste"
+              type="text"
+              autoComplete="nickname"
+              defaultValue={state.values.artistName}
+              error={state.fieldErrors.artistName}
+              ticket={state.ticket}
+            />
+          </>
         ) : null}
         <AuthField
           id="email"

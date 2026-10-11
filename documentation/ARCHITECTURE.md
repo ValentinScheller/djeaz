@@ -51,7 +51,7 @@ Le `publicId`, distinct de l'ID interne, contient 32 octets aléatoires encodés
 
 | Entité | Champs et relations essentiels |
 |---|---|
-| Tables Better Auth | Utilisateur, compte, session et vérification ; schéma compatible avec la version retenue |
+| Tables Better Auth | Utilisateur (`name` : nom / prénom privé ; `artistName` : nom d'artiste public), compte, session et vérification ; schéma compatible avec la version retenue |
 | `catalogs` | Un catalogue par utilisateur : `ownerId` unique, `seedVersion`, `revision` |
 | `genres` | Catalogue, nom, ordre d'affichage |
 | `tracks` | Genre, titre, artiste, ordre d'affichage ; un genre par morceau au MVP |
@@ -59,6 +59,8 @@ Le `publicId`, distinct de l'ID interne, contient 32 octets aléatoires encodés
 | `responses` | Événement, pseudonyme, tranche d'âge, empreinte du secret, version, dates de soumission/modification |
 | `response_selections` | Réponse, référence nullable au morceau courant, clés historiques du morceau/genre et copie de leurs libellés |
 | `free_requests` | Réponse, texte libre, ordre |
+
+`name` identifie le titulaire du compte. `artistName` est l'identité artistique publique du DJ : texte obligatoire, 1 à 80 caractères, non unique.
 
 IDs métier en UUID ; références utilisateur conformes au schéma Better Auth. Dates techniques en `timestamptz`/UTC ; date d'événement en `date`, sans heure. La distinction `upcoming/past` est calculée en `Europe/Paris` : aujourd'hui reste à venir, sans modifier le statut du sondage.
 

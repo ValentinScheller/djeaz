@@ -76,7 +76,7 @@ test("inscrit, connecte et déconnecte sans vérification d'e-mail", async () =>
   const email = "dj@example.com";
   const signUp = await authRequest("/sign-up/email", {
     method: "POST",
-    body: { name: "DJ Test", email, password: validPassword },
+    body: { name: "DJ Test", artistName: "DJ Nova", email, password: validPassword },
   });
   const signUpBody = (await readBody(signUp)) as {
     user?: { email?: string; emailVerified?: boolean };
@@ -121,7 +121,7 @@ test("inscrit, connecte et déconnecte sans vérification d'e-mail", async () =>
 
   const duplicate = await authRequest("/sign-up/email", {
     method: "POST",
-    body: { name: "Autre", email, password: validPassword },
+    body: { name: "Autre", artistName: "DJ Nova", email, password: validPassword },
   });
   const duplicateBody = (await readBody(duplicate)) as { code?: string };
 
@@ -164,11 +164,81 @@ test("inscrit, connecte et déconnecte sans vérification d'e-mail", async () =>
   expect(await db.select().from(session)).toHaveLength(1);
 });
 
+test("le nom d'artiste est stocké et reste dans la session après connexion", async () => {
+  const email = "artiste@example.com";
+  const signUp = await authRequest("/sign-up/email", {
+    method: "POST",
+    ip: "203.0.113.70",
+    body: {
+      name: "Camille Martin",
+      artistName: "DJ Nova",
+      email,
+      password: validPassword,
+    },
+  });
+  const signUpBody = (await readBody(signUp)) as {
+    user?: { name?: string; artistName?: string; email?: string };
+  };
+  const setCookie = sessionCookie(signUp);
+
+  expect(signUp.status).toBe(200);
+  expect(signUpBody.user?.name).toBe("Camille Martin");
+  expect(signUpBody.user?.artistName).toBe("DJ Nova");
+  expect(signUpBody.user?.email).toBe(email);
+  expect(setCookie).toBeDefined();
+
+  const stored = await db.execute<{ artist_name: string; name: string }>(
+    sql`SELECT name, artist_name FROM "user" WHERE email = ${email}`,
+  );
+  expect(stored.rows[0]?.name).toBe("Camille Martin");
+  expect(stored.rows[0]?.artist_name).toBe("DJ Nova");
+
+  const cookie = cookiePair(setCookie!);
+  const session = await auth.getSession(new Headers({ cookie, origin }));
+  expect(session).not.toBeNull();
+  if (!session) {
+    return;
+  }
+  const artistName: string = session.user.artistName;
+  expect(artistName).toBe("DJ Nova");
+  expect(session.user.name).toBe("Camille Martin");
+  expect(session.user.email).toBe(email);
+
+  const signOut = await authRequest("/sign-out", {
+    method: "POST",
+    ip: "203.0.113.70",
+    cookie,
+    body: {},
+  });
+  expect(signOut.status).toBe(200);
+
+  const signIn = await authRequest("/sign-in/email", {
+    method: "POST",
+    ip: "203.0.113.71",
+    body: { email, password: validPassword },
+  });
+  const signInCookie = sessionCookie(signIn);
+  expect(signIn.status).toBe(200);
+  expect(signInCookie).toBeDefined();
+
+  const restored = await auth.getSession(
+    new Headers({ cookie: cookiePair(signInCookie!), origin }),
+  );
+  expect(restored?.user.artistName).toBe("DJ Nova");
+  expect(restored?.user.name).toBe("Camille Martin");
+  expect(restored?.user.email).toBe(email);
+});
+
 test("refuse un mot de passe hors des bornes 8–128", async () => {
   const short = await authRequest("/sign-up/email", {
     method: "POST",
     ip: "203.0.113.11",
-    body: { name: "DJ", email: "court@example.com", password: "a".repeat(PASSWORD_MIN_LENGTH - 1) },
+    body: {
+      name: "DJ",
+      artistName: "DJ Nova",
+      email: "court@example.com",
+      password: "a".repeat(PASSWORD_MIN_LENGTH - 1),
+    },
   });
   const shortBody = (await readBody(short)) as { code?: string };
 
@@ -180,7 +250,7 @@ test("refuse un mot de passe hors des bornes 8–128", async () => {
   const long = await authRequest("/sign-up/email", {
     method: "POST",
     ip: "203.0.113.11",
-    body: { name: "DJ", email: "long@example.com", password: longPassword },
+    body: { name: "DJ", artistName: "DJ Nova", email: "long@example.com", password: longPassword },
   });
   const longBody = (await readBody(long)) as { code?: string; message?: string };
 
@@ -195,7 +265,12 @@ test("refuse une origine non configurée", async () => {
     method: "POST",
     ip: "203.0.113.12",
     requestOrigin: "https://evil.example",
-    body: { name: "DJ", email: "origine@example.com", password: validPassword },
+    body: {
+      name: "DJ",
+      artistName: "DJ Nova",
+      email: "origine@example.com",
+      password: validPassword,
+    },
   });
   const body = (await readBody(response)) as { code?: string };
 

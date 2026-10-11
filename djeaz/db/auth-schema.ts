@@ -1,5 +1,7 @@
 // Schéma généré par le CLI Better Auth 1.7.7
 // (`auth@1.7.7 generate --adapter drizzle --dialect postgresql`), sans plugin.
+// `artistName` (`artist_name`) est un additionalField déclaré dans
+// `features/auth/server.ts` : nom d'artiste public, distinct de `name`.
 // `rateLimit` vient du même générateur avec `rateLimit.storage = "database"` :
 // table SQL `rate_limit`, distincte de la table projet `rate_limits`.
 // Le générateur émet `timestamp` sans fuseau ; `{ withTimezone: true }` aligne
@@ -11,6 +13,7 @@ import { bigint, boolean, index, integer, pgTable, text, timestamp } from "drizz
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  artistName: text("artist_name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),

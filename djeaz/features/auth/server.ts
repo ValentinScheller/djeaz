@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 
 import { getServerEnv } from "@/lib/env.server";
 
+import { artistNameSchema } from "./credentials";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./password-policy";
 
 let authPromise: ReturnType<typeof createAuth> | undefined;
@@ -30,6 +31,20 @@ async function createAuth() {
         rateLimit: tables.rateLimit,
       },
     }),
+    // Clé `artistName` = propriété Drizzle. Ne pas définir `fieldName` :
+    // l'adaptateur l'utiliserait comme clé de schéma au lieu de `artistName`.
+    // Trim et bornes : validateur Standard Schema (Zod), avant enregistrement.
+    user: {
+      additionalFields: {
+        artistName: {
+          type: "string",
+          required: true,
+          validator: {
+            input: artistNameSchema,
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       disableSignUp: false,
@@ -77,9 +92,16 @@ export const auth = {
   },
   // `auth.api.*` court-circuite le limiteur du routeur. `handler` reste en processus :
   // ce n'est pas un appel HTTP vers `/api/auth`, et les seuils 1.7.7 s'appliquent.
-  signUpEmail(input: { name: string; email: string; password: string; requestHeaders: Headers }) {
+  signUpEmail(input: {
+    name: string;
+    artistName: string;
+    email: string;
+    password: string;
+    requestHeaders: Headers;
+  }) {
     return postAuth("/sign-up/email", input.requestHeaders, {
       name: input.name,
+      artistName: input.artistName,
       email: input.email,
       password: input.password,
     });

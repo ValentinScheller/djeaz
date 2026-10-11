@@ -1,9 +1,10 @@
 export type CredentialsValues = {
   name: string;
+  artistName: string;
   email: string;
 };
 
-export type CredentialsField = "name" | "email" | "password" | "confirmPassword";
+export type CredentialsField = "name" | "artistName" | "email" | "password" | "confirmPassword";
 
 export type CredentialsFormState = {
   fieldErrors: Partial<Record<CredentialsField, string>>;
@@ -17,7 +18,7 @@ export type CredentialsFormState = {
 
 export const initialCredentialsState: CredentialsFormState = {
   fieldErrors: {},
-  values: { name: "", email: "" },
+  values: { name: "", artistName: "", email: "" },
   ticket: "initial",
 };
 
