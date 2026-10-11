@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 
+import { requirePageSession } from "@/features/auth/session.server";
+
 export const metadata: Metadata = {
   title: "Dashboard",
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await requirePageSession("/dashboard");
+
   return (
     <div className="flex flex-col gap-2">
       <h1 className="text-xl font-semibold">Dashboard</h1>

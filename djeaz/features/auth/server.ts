@@ -63,4 +63,14 @@ export const auth = {
   handler(request: Request): Promise<Response> {
     return getAuth().then((instance) => instance.handler(request));
   },
+  // Lecture directe de l'API serveur. `disableCookieCache` ignore un éventuel
+  // cache signé : seule la session en base autorise.
+  getSession(requestHeaders: Headers) {
+    return getAuth().then((instance) =>
+      instance.api.getSession({
+        headers: requestHeaders,
+        query: { disableCookieCache: true },
+      }),
+    );
+  },
 };

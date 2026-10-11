@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 
+import { requirePageSession } from "@/features/auth/session.server";
+
 export const metadata: Metadata = {
   title: "Paramètres",
 };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requirePageSession("/settings");
+
   return (
     <div className="flex flex-col gap-2">
       <h1 className="text-xl font-semibold">Paramètres</h1>
