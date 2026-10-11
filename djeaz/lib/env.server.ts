@@ -21,7 +21,9 @@ const postgresUrl = z.url({
 const serverEnvSchema = z.object({
   DATABASE_URL: postgresUrl,
   DATABASE_MIGRATION_URL: postgresUrl,
-  BETTER_AUTH_SECRET: z.string().trim().min(1),
+  // Better Auth 1.7.7 : au moins 32 caractères. La bibliothèque ne fait qu'avertir ;
+  // ici un secret trop court est refusé. La valeur ne figure pas dans l'erreur.
+  BETTER_AUTH_SECRET: z.string().trim().min(32),
   // `z.httpUrl()` exige un domaine public et refuse `localhost`.
   BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
 });

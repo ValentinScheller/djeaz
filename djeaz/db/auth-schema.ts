@@ -1,9 +1,12 @@
 // Schéma généré par le CLI Better Auth 1.7.7
 // (`auth@1.7.7 generate --adapter drizzle --dialect postgresql`), sans plugin.
+// `rateLimit` vient du même générateur avec `rateLimit.storage = "database"` :
+// table SQL `rate_limit`, distincte de la table projet `rate_limits`.
 // Le générateur émet `timestamp` sans fuseau ; `{ withTimezone: true }` aligne
 // ces dates techniques sur `timestamptz` / UTC (ARCHITECTURE §4).
+// `lastRequest` reste un entier de millisecondes, comme le générateur.
 import { relations } from "drizzle-orm";
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -76,6 +79,13 @@ export const verification = pgTable(
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
+
+export const rateLimit = pgTable("rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

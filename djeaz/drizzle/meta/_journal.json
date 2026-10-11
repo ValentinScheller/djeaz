@@ -8,6 +8,13 @@
       "when": 1791727347230,
       "tag": "0000_calm_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791729226508,
+      "tag": "0001_auth_rate_limit",
+      "breakpoints": true
     }
   ]
 }

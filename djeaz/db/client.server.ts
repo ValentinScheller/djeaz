@@ -12,7 +12,8 @@ const globalForDb = globalThis as typeof globalThis & {
 
 function getPool(): Pool {
   const existing = globalForDb.__djeazPgPool;
-  if (existing) {
+  // Un pool déjà fermé (fin de tests) ne doit pas être réutilisé.
+  if (existing && !existing.ending) {
     return existing;
   }
 

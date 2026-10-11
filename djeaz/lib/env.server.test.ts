@@ -13,7 +13,7 @@ const envKeys = [
 const validEnv = {
   DATABASE_URL: "postgresql://djeaz:local-password@127.0.0.1:5432/djeaz_dev",
   DATABASE_MIGRATION_URL: "postgresql://djeaz:local-password@127.0.0.1:5432/djeaz_dev",
-  BETTER_AUTH_SECRET: "local-auth-secret",
+  BETTER_AUTH_SECRET: "local-auth-secret-32-characters-minimum",
   BETTER_AUTH_URL: "http://127.0.0.1:3000",
 };
 
@@ -67,6 +67,31 @@ test("rejette une configuration invalide sans divulguer les valeurs", async () =
   expect(message).toContain("BETTER_AUTH_URL");
   expect(message).not.toContain(databaseSecret);
   expect(message).not.toContain(authSecret);
+});
+
+test("rejette un secret de moins de 32 caractères sans le divulguer", async () => {
+  const shortSecret = "secret-trop-court-visible";
+
+  expect(shortSecret.length).toBeLessThan(32);
+  Object.assign(process.env, validEnv);
+  process.env.BETTER_AUTH_SECRET = shortSecret;
+
+  const getServerEnv = await loadGetServerEnv();
+  const message = errorMessage(() => getServerEnv());
+
+  expect(message).toBe("Configuration serveur invalide : BETTER_AUTH_SECRET.");
+  expect(message).not.toContain(shortSecret);
+  expect(message).not.toContain(validEnv.BETTER_AUTH_SECRET);
+});
+
+test("accepte un secret d'exactement 32 caractères", async () => {
+  const secret = "a".repeat(32);
+
+  Object.assign(process.env, validEnv, { BETTER_AUTH_SECRET: secret });
+
+  const getServerEnv = await loadGetServerEnv();
+
+  expect(getServerEnv().BETTER_AUTH_SECRET).toBe(secret);
 });
 
 test("isole le cache de configuration entre les scénarios", async () => {
