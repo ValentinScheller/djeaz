@@ -13,6 +13,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => navigation.pathname,
 }));
 
+vi.mock("@/features/auth/actions", () => ({
+  signOutAction: vi.fn(),
+}));
+
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -52,10 +56,7 @@ test("la navigation indique la page active et l'identité factice", () => {
   expect(screen.getByText("dj@example.test")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: /DJ Démo/ }));
-  expect(screen.getByRole("menuitem", { name: "Déconnexion" })).toHaveAttribute(
-    "aria-disabled",
-    "true",
-  );
+  expect(screen.getByRole("menuitem", { name: "Déconnexion" })).toBeEnabled();
 });
 
 test("le tiroir mobile s'ouvre, expose la navigation et se ferme", () => {

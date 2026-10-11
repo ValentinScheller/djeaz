@@ -1,7 +1,9 @@
 import "server-only";
 
-import { betterAuth } from "better-auth/minimal";
+import { parseSetCookieHeader, toCookieOptions } from "better-auth/cookies/utils";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { betterAuth } from "better-auth/minimal";
+import { cookies } from "next/headers";
 
 import { getServerEnv } from "@/lib/env.server";
 
@@ -73,4 +75,60 @@ export const auth = {
       }),
     );
   },
+  // `auth.api.*` court-circuite le limiteur du routeur. `handler` reste en processus :
+  // ce n'est pas un appel HTTP vers `/api/auth`, et les seuils 1.7.7 s'appliquent.
+  signUpEmail(input: { name: string; email: string; password: string; requestHeaders: Headers }) {
+    return postAuth("/sign-up/email", input.requestHeaders, {
+      name: input.name,
+      email: input.email,
+      password: input.password,
+    });
+  },
+  signInEmail(input: { email: string; password: string; requestHeaders: Headers }) {
+    return postAuth("/sign-in/email", input.requestHeaders, {
+      email: input.email,
+      password: input.password,
+    });
+  },
+  signOut(requestHeaders: Headers) {
+    return postAuth("/sign-out", requestHeaders, {});
+  },
 };
+
+async function applyAuthCookies(response: Response): Promise<void> {
+  const cookieStore = await cookies();
+
+  for (const header of response.headers.getSetCookie()) {
+    for (const [name, attributes] of parseSetCookieHeader(header)) {
+      if (!name) {
+        continue;
+      }
+
+      cookieStore.set(name, attributes.value, toCookieOptions(attributes));
+    }
+  }
+}
+
+async function postAuth(
+  path: "/sign-up/email" | "/sign-in/email" | "/sign-out",
+  requestHeaders: Headers,
+  body: Record<string, unknown>,
+): Promise<Response> {
+  const env = getServerEnv();
+  const headers = new Headers(requestHeaders);
+  headers.set("content-type", "application/json");
+  headers.delete("content-length");
+
+  const response = await getAuth().then((instance) =>
+    instance.handler(
+      new Request(new URL(`/api/auth${path}`, env.BETTER_AUTH_URL), {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      }),
+    ),
+  );
+
+  await applyAuthCookies(response);
+  return response;
+}

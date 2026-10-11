@@ -79,8 +79,58 @@ function internalReturnPath(value: string): string {
   return path;
 }
 
+export function safeReturnPath(value: string | null | undefined): string {
+  if (typeof value !== "string") {
+    return DEFAULT_RETURN_PATH;
+  }
+
+  return internalReturnPath(value);
+}
+
+function requestsDashboard(value: string): boolean {
+  const candidate = value.trim();
+  return (
+    candidate === DEFAULT_RETURN_PATH ||
+    candidate.startsWith(`${DEFAULT_RETURN_PATH}?`) ||
+    candidate.startsWith(`${DEFAULT_RETURN_PATH}#`)
+  );
+}
+
+/** `undefined` si l'entrée est vide ou rejetée. Une valeur sûre peut être reprise dans un lien. */
+export function preservedReturnTo(value: string | null | undefined): string | undefined {
+  if (typeof value !== "string" || value.trim() === "") {
+    return undefined;
+  }
+
+  const safe = internalReturnPath(value);
+  if (safe === DEFAULT_RETURN_PATH && !requestsDashboard(value)) {
+    return undefined;
+  }
+
+  return safe;
+}
+
+export function readReturnToParam(value: string | string[] | undefined): string | undefined {
+  return preservedReturnTo(typeof value === "string" ? value : undefined);
+}
+
+export function authPagePath(path: "/sign-in" | "/sign-up", returnTo: string | undefined): string {
+  if (!returnTo) {
+    return path;
+  }
+
+  return `${path}?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
 export function signInRedirectPath(returnPath: string): string {
-  return `${SIGN_IN_PATH}?returnTo=${encodeURIComponent(internalReturnPath(returnPath))}`;
+  return `${SIGN_IN_PATH}?returnTo=${encodeURIComponent(safeReturnPath(returnPath))}`;
+}
+
+export async function redirectAuthenticatedToDashboard(): Promise<void> {
+  const result = await getAuthenticatedSession();
+  if (result.ok) {
+    redirect("/dashboard");
+  }
 }
 
 export async function requirePageSession(returnPath: string): Promise<CurrentSession> {

@@ -1,7 +1,9 @@
 "use client";
 
 import { CircleUserIcon } from "lucide-react";
+import { useActionState, useEffect, useRef } from "react";
 
+import { FieldError } from "@/components/forms/field-error";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { signOutAction } from "@/features/auth/actions";
+import { initialSignOutState } from "@/features/auth/form-state";
 import { cn } from "cn";
 
 /**
@@ -28,6 +32,39 @@ type DashboardUserMenuProps = {
   /** Libellé visible seulement à partir de `lg`. L'infobulle couvre l'état compact. */
   responsive?: boolean;
 };
+
+function SignOutForm() {
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitted = useRef(false);
+  const [state, formAction, pending] = useActionState(signOutAction, initialSignOutState);
+
+  useEffect(() => {
+    if (!pending) {
+      submitted.current = false;
+    }
+  }, [pending]);
+
+  return (
+    <form ref={formRef} action={formAction} className="w-full">
+      <DropdownMenuItem
+        disabled={pending}
+        closeOnClick={false}
+        onClick={() => {
+          if (pending || submitted.current) {
+            return;
+          }
+          submitted.current = true;
+          formRef.current?.requestSubmit();
+        }}
+      >
+        {pending ? "Déconnexion…" : "Déconnexion"}
+      </DropdownMenuItem>
+      {state.formError ? (
+        <FieldError id="sign-out-error" message={state.formError} className="px-1.5" />
+      ) : null}
+    </form>
+  );
+}
 
 export function DashboardUserMenu({ responsive = false }: DashboardUserMenuProps) {
   const trigger = (
@@ -77,8 +114,7 @@ export function DashboardUserMenu({ responsive = false }: DashboardUserMenuProps
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        {/* P2 branchera la déconnexion. Aucun handler ni succès factice. */}
-        <DropdownMenuItem disabled>Déconnexion</DropdownMenuItem>
+        <SignOutForm />
       </DropdownMenuContent>
     </DropdownMenu>
   );

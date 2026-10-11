@@ -24,7 +24,14 @@ vi.mock("@/features/auth/server", () => ({
   },
 }));
 
-import { getAuthenticatedSession, requirePageSession, signInRedirectPath } from "./session.server";
+import {
+  authPagePath,
+  getAuthenticatedSession,
+  preservedReturnTo,
+  redirectAuthenticatedToDashboard,
+  requirePageSession,
+  signInRedirectPath,
+} from "./session.server";
 
 const session = {
   session: {
@@ -122,6 +129,31 @@ test("le retour encode les chemins internes", () => {
   expect(signInRedirectPath("/catalog")).toBe("/sign-in?returnTo=%2Fcatalog");
   expect(signInRedirectPath("/settings")).toBe("/sign-in?returnTo=%2Fsettings");
   expect(expectInternalSignIn(signInRedirectPath("/catalog?x=1"))).toBe("/catalog?x=1");
+});
+
+test("un retour interne peut être repris, un retour externe non", () => {
+  expect(preservedReturnTo("/catalog")).toBe("/catalog");
+  expect(preservedReturnTo("/catalog?x=1")).toBe("/catalog?x=1");
+  expect(preservedReturnTo("/dashboard")).toBe("/dashboard");
+  expect(preservedReturnTo(undefined)).toBeUndefined();
+  expect(preservedReturnTo("")).toBeUndefined();
+  expect(preservedReturnTo("https://evil.example")).toBeUndefined();
+  expect(preservedReturnTo("//evil.example")).toBeUndefined();
+  expect(preservedReturnTo("/\\evil.example")).toBeUndefined();
+  expect(authPagePath("/sign-up", "/catalog")).toBe("/sign-up?returnTo=%2Fcatalog");
+  expect(authPagePath("/sign-in", undefined)).toBe("/sign-in");
+});
+
+test("un utilisateur déjà connecté quitte les pages d'authentification", async () => {
+  getSession.mockResolvedValue(session);
+
+  await expect(redirectAuthenticatedToDashboard()).rejects.toThrow("REDIRECT:/dashboard");
+});
+
+test("sans session, les pages d'authentification restent accessibles", async () => {
+  getSession.mockResolvedValue(null);
+
+  await expect(redirectAuthenticatedToDashboard()).resolves.toBeUndefined();
 });
 
 test("une destination externe ne devient pas une redirection externe", () => {
