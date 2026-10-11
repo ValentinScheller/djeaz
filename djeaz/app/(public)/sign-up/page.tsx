@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { AuthScreen } from "@/components/auth/auth-screen";
-import { CredentialsForm } from "@/components/auth/credentials-form";
 import {
   authPagePath,
   readReturnToParam,
@@ -24,6 +23,7 @@ export default async function SignUpPage({
 
   return (
     <AuthScreen
+      mode="sign-up"
       title="Inscription"
       description="Créez votre espace DJ pour préparer vos événements."
       alternate={{
@@ -31,8 +31,6 @@ export default async function SignUpPage({
         prompt: "Déjà un compte ?",
         label: "Connexion",
       }}
-    >
-      <CredentialsForm mode="sign-up" />
-    </AuthScreen>
+    />
   );
 }

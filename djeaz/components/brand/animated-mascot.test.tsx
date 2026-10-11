@@ -8,6 +8,7 @@ import { AnimatedMascot } from "@/components/brand/animated-mascot";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const FLOATY_SRC = "/mascotte-animated-floaty.lottie";
 const BACKFLIP_SRC = "/mascotte-animated-backflip.lottie";
+const ESCAPE_SRC = "/mascotte-animated-escape.lottie";
 
 type Listener = () => void;
 
@@ -35,6 +36,7 @@ vi.mock("@lottiefiles/dotlottie-react", () => ({
         pause: () => void;
         play: () => void;
         setFrame: (frame: number) => void;
+        setSpeed: (speed: number) => void;
       } | null,
     ) => void;
   }) => {
@@ -62,6 +64,9 @@ vi.mock("@lottiefiles/dotlottie-react", () => ({
         },
         setFrame(frame: number) {
           playerEvents.calls.push(`setFrame:${frame}`);
+        },
+        setSpeed(speed: number) {
+          playerEvents.calls.push(`setSpeed:${speed}`);
         },
       });
       playerEvents.emit = (event) => {
@@ -343,4 +348,102 @@ test("reduced-motion annule les pauses et retire le player", () => {
   expect(playerEvents.calls).toEqual(["pause", "setFrame:0"]);
   expect(screen.queryByTestId("dotlottie")).not.toBeInTheDocument();
   expect(document.querySelector("img")).toHaveAttribute("src", "/mascotte.svg");
+});
+
+test("hold affiche la première frame sans lancer la lecture", () => {
+  vi.useFakeTimers();
+  installReducedMotion(false);
+  const onComplete = vi.fn();
+  const onUnavailable = vi.fn();
+
+  render(
+    <AnimatedMascot
+      variant="escape"
+      playback="hold"
+      onComplete={onComplete}
+      onUnavailable={onUnavailable}
+    />,
+  );
+
+  const player = screen.getByTestId("dotlottie");
+  expect(player).toHaveAttribute("data-src", ESCAPE_SRC);
+  expect(player).toHaveAttribute("data-loop", "false");
+  expect(player).toHaveAttribute("data-autoplay", "false");
+
+  act(() => playerEvents.emit?.("load"));
+  act(() => {
+    vi.advanceTimersByTime(5000);
+  });
+
+  expect(playerEvents.calls).toEqual(["pause", "setFrame:0"]);
+  expect(onComplete).not.toHaveBeenCalled();
+  expect(onUnavailable).not.toHaveBeenCalled();
+});
+
+test("once joue escape une seule fois et signale la fin réelle", () => {
+  installReducedMotion(false);
+  const onComplete = vi.fn();
+
+  const { rerender } = render(
+    <AnimatedMascot variant="escape" playback="hold" onComplete={onComplete} />,
+  );
+  act(() => playerEvents.emit?.("load"));
+
+  rerender(<AnimatedMascot variant="escape" playback="once" onComplete={onComplete} />);
+
+  expect(playerEvents.calls).toEqual(["pause", "setFrame:0", "play"]);
+  expect(screen.getByTestId("dotlottie")).toHaveAttribute("data-loop", "false");
+  expect(onComplete).not.toHaveBeenCalled();
+
+  act(() => playerEvents.emit?.("complete"));
+
+  expect(onComplete).toHaveBeenCalledOnce();
+  expect(playerEvents.calls.filter((call) => call === "play")).toHaveLength(1);
+});
+
+test("un player en échec sur once prévient sans garder l'animation", () => {
+  installReducedMotion(false);
+  const onUnavailable = vi.fn();
+
+  render(<AnimatedMascot playback="once" onUnavailable={onUnavailable} />);
+  act(() => playerEvents.emit?.("loadError"));
+
+  expect(onUnavailable).toHaveBeenCalledOnce();
+  expect(screen.queryByTestId("dotlottie")).not.toBeInTheDocument();
+  expect(document.querySelector("img")).toHaveAttribute("src", "/mascotte.svg");
+});
+
+test("reduced-motion sur once n'attend pas l'animation", () => {
+  installReducedMotion(true);
+  const onComplete = vi.fn();
+  const onUnavailable = vi.fn();
+
+  render(<AnimatedMascot playback="once" onComplete={onComplete} onUnavailable={onUnavailable} />);
+
+  expect(screen.queryByTestId("dotlottie")).not.toBeInTheDocument();
+  expect(document.querySelector("img")).toHaveAttribute("src", "/mascotte.svg");
+  expect(onUnavailable).toHaveBeenCalledOnce();
+  expect(onComplete).not.toHaveBeenCalled();
+});
+
+test("la vitesse par défaut ne modifie pas le player", () => {
+  installReducedMotion(false);
+
+  render(<AnimatedMascot variant="escape" playback="once" />);
+  act(() => playerEvents.emit?.("load"));
+
+  expect(playerEvents.calls.some((call) => call.startsWith("setSpeed"))).toBe(false);
+  expect(playerEvents.calls).toContain("play");
+});
+
+test("une vitesse explicite n'est appliquée qu'au lancement de once", () => {
+  installReducedMotion(false);
+
+  const { rerender } = render(<AnimatedMascot variant="escape" playback="hold" speed={1.4} />);
+  act(() => playerEvents.emit?.("load"));
+  expect(playerEvents.calls).toEqual(["pause", "setFrame:0"]);
+
+  rerender(<AnimatedMascot variant="escape" playback="once" speed={1.4} />);
+
+  expect(playerEvents.calls).toEqual(["pause", "setFrame:0", "setSpeed:1.4", "play"]);
 });

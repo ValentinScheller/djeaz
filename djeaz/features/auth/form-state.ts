@@ -11,6 +11,8 @@ export type CredentialsFormState = {
   values: CredentialsValues;
   /** Change à chaque échec pour réinitialiser les mots de passe sans les renvoyer. */
   ticket: string;
+  /** Destination interne déjà validée. Présente seulement après un succès d'authentification. */
+  redirectTo?: string;
 };
 
 export const initialCredentialsState: CredentialsFormState = {

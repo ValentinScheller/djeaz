@@ -55,6 +55,15 @@ async function hasSessionToken(response: Response): Promise<boolean> {
   }
 }
 
+function authenticatedState(redirectTo: string, values: CredentialsValues): CredentialsFormState {
+  return {
+    fieldErrors: {},
+    values,
+    ticket: "authenticated",
+    redirectTo,
+  };
+}
+
 export async function signUpAction(
   _previous: CredentialsFormState,
   formData: FormData,
@@ -88,7 +97,7 @@ export async function signUpAction(
     return unexpectedAuthState(new Error("MissingSession"), parsed.values);
   }
 
-  redirect("/dashboard");
+  return authenticatedState("/dashboard", parsed.values);
 }
 
 export async function signInAction(
@@ -123,7 +132,7 @@ export async function signInAction(
     return unexpectedAuthState(new Error("MissingSession"), parsed.values);
   }
 
-  redirect(safeReturnPath(parsed.returnTo));
+  return authenticatedState(safeReturnPath(parsed.returnTo), parsed.values);
 }
 
 export async function signOutAction(): Promise<SignOutState> {

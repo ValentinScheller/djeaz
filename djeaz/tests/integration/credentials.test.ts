@@ -60,16 +60,18 @@ function setRequestHeaders(ip: string, cookie?: string) {
   headerStore.current = headers;
 }
 
-test("l'inscription crée la session et redirige vers le dashboard", async () => {
+test("l'inscription crée la session et prépare le dashboard", async () => {
   setRequestHeaders("203.0.113.90");
   const email = "inscription@example.com";
 
-  await expect(
-    signUpAction(
-      initialCredentialsState,
-      formData({ name: "DJ Test", email, password, confirmPassword: password }),
-    ),
-  ).rejects.toThrow("REDIRECT:/dashboard");
+  const created = await signUpAction(
+    initialCredentialsState,
+    formData({ name: "DJ Test", email, password, confirmPassword: password }),
+  );
+
+  expect(created.redirectTo).toBe("/dashboard");
+  expect(created.formError).toBeUndefined();
+  expect(JSON.stringify(created)).not.toContain(password);
 
   const users = await db.select().from(user);
   const sessions = await db.select().from(sessionTable);
@@ -87,9 +89,8 @@ test("un e-mail déjà utilisé reste en français et conserve les saisies non s
   const email = "deja-pris@example.com";
   const fields = { name: "DJ Test", email, password, confirmPassword: password };
 
-  await expect(signUpAction(initialCredentialsState, formData(fields))).rejects.toThrow(
-    "REDIRECT:/dashboard",
-  );
+  const created = await signUpAction(initialCredentialsState, formData(fields));
+  expect(created.redirectTo).toBe("/dashboard");
 
   const duplicate = await signUpAction(
     initialCredentialsState,
@@ -103,25 +104,25 @@ test("un e-mail déjà utilisé reste en français et conserve les saisies non s
   expect(await db.select().from(user)).toHaveLength(1);
 });
 
-test("la connexion redirige vers le dashboard ou un retour interne", async () => {
+test("la connexion indique le dashboard ou un retour interne", async () => {
   setRequestHeaders("203.0.113.92");
   const email = "connexion@example.com";
 
-  await expect(
-    signUpAction(
-      initialCredentialsState,
-      formData({ name: "DJ Test", email, password, confirmPassword: password }),
-    ),
-  ).rejects.toThrow("REDIRECT:/dashboard");
+  const created = await signUpAction(
+    initialCredentialsState,
+    formData({ name: "DJ Test", email, password, confirmPassword: password }),
+  );
+  expect(created.redirectTo).toBe("/dashboard");
 
-  await expect(
-    signInAction(initialCredentialsState, formData({ email, password })),
-  ).rejects.toThrow("REDIRECT:/dashboard");
+  const home = await signInAction(initialCredentialsState, formData({ email, password }));
+  expect(home.redirectTo).toBe("/dashboard");
 
   setRequestHeaders("203.0.113.93");
-  await expect(
-    signInAction(initialCredentialsState, formData({ email, password, returnTo: "/catalog" })),
-  ).rejects.toThrow("REDIRECT:/catalog");
+  const catalog = await signInAction(
+    initialCredentialsState,
+    formData({ email, password, returnTo: "/catalog" }),
+  );
+  expect(catalog.redirectTo).toBe("/catalog");
 
   for (const [ip, returnTo] of [
     ["203.0.113.94", "https://evil.example"],
@@ -129,9 +130,11 @@ test("la connexion redirige vers le dashboard ou un retour interne", async () =>
     ["203.0.113.96", "/\\evil.example"],
   ] as const) {
     setRequestHeaders(ip);
-    await expect(
-      signInAction(initialCredentialsState, formData({ email, password, returnTo })),
-    ).rejects.toThrow("REDIRECT:/dashboard");
+    const rejected = await signInAction(
+      initialCredentialsState,
+      formData({ email, password, returnTo }),
+    );
+    expect(rejected.redirectTo).toBe("/dashboard");
   }
 });
 
@@ -144,6 +147,7 @@ test("de mauvais identifiants restent un message générique", async () => {
   );
 
   expect(result.formError).toBe("Adresse e-mail ou mot de passe incorrect.");
+  expect(result.redirectTo).toBeUndefined();
   expect(result.formError).not.toMatch(/exist|introuvable|absent@example.com/i);
   expect(JSON.stringify(result)).not.toContain(password);
   expect(result.values.email).toBe("absent@example.com");
@@ -177,17 +181,16 @@ test("la déconnexion invalide la session et renvoie vers la connexion", async (
   setRequestHeaders("203.0.113.99");
   cookieSets.current = [];
 
-  await expect(
-    signUpAction(
-      initialCredentialsState,
-      formData({
-        name: "DJ Test",
-        email: "depart@example.com",
-        password,
-        confirmPassword: password,
-      }),
-    ),
-  ).rejects.toThrow("REDIRECT:/dashboard");
+  const created = await signUpAction(
+    initialCredentialsState,
+    formData({
+      name: "DJ Test",
+      email: "depart@example.com",
+      password,
+      confirmPassword: password,
+    }),
+  );
+  expect(created.redirectTo).toBe("/dashboard");
 
   const sessionCookie = cookieSets.current.find((cookie) => cookie.name.includes("session_token"));
   expect(sessionCookie).toBeDefined();

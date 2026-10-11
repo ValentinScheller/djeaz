@@ -14,6 +14,12 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string): never => {
     throw new Error(`REDIRECT:${url}`);
   },
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
+vi.mock("@/components/brand/animated-mascot", () => ({
+  AnimatedMascot: () => <div data-testid="auth-mascot" />,
+  MASCOT_CHARACTER_RATIO: 0.61,
 }));
 
 vi.mock("@/features/auth/server", () => ({

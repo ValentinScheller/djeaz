@@ -2,7 +2,7 @@
 
 import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
 import { cn } from "cn";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { Mascot } from "@/components/brand/mascot";
 
@@ -14,6 +14,7 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
  * remplit tout son cadre : on reprend ce cadrage pour éviter le saut
  * au chargement du premier frame.
  */
+export const MASCOT_CHARACTER_RATIO = 0.61;
 const STATIC_FALLBACK_SCALE = "origin-center scale-[61%] translate-y-[1.15%]";
 
 const MASCOT_ANIMATIONS = {
@@ -25,42 +26,71 @@ const MASCOT_ANIMATIONS = {
 } as const;
 
 type AnimatedMascotVariant = keyof typeof MASCOT_ANIMATIONS;
+type AnimatedMascotPlayback = "auto" | "hold" | "once";
 
 type AnimatedMascotProps = {
   /** Vide : décorative. Renseigné seulement si l'animation porte une information. */
   alt?: string;
   className?: string;
+  style?: CSSProperties;
   /** Animation officielle. `floaty` boucle naturellement. */
   variant?: AnimatedMascotVariant;
   /** Maintien de la première frame avant la lecture, en millisecondes. */
   startDelay?: number;
   /** Maintien de la dernière frame avant le retour au début, en millisecondes. */
   endDelay?: number;
+  /**
+   * `auto` conserve la lecture actuelle. `hold` fige la première frame.
+   * `once` joue une seule fois, sans boucle ni délai.
+   */
+  playback?: AnimatedMascotPlayback;
+  /** Fin réelle d'une lecture `once`. */
+  onComplete?: () => void;
+  /** Lecture `once` impossible : mouvement réduit ou player en échec. */
+  onUnavailable?: () => void;
+  /** Multiplicateur de lecture. `1` conserve le rythme du fichier. */
+  speed?: number;
 };
 
 export function AnimatedMascot({
   alt = "",
   className,
+  style,
   variant = "floaty",
   startDelay = 0,
   endDelay = 0,
+  playback = "auto",
+  onComplete,
+  onUnavailable,
+  speed = 1,
 }: AnimatedMascotProps) {
-  const [allowMotion, setAllowMotion] = useState(false);
+  const [allowMotion, setAllowMotion] = useState<boolean | null>(null);
   const [animationReady, setAnimationReady] = useState(false);
   const [animationFailed, setAnimationFailed] = useState(false);
   const unbindPlayer = useRef<(() => void) | null>(null);
   const phaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playerRef = useRef<DotLottie | null>(null);
   const startDelayRef = useRef(startDelay);
   const endDelayRef = useRef(endDelay);
+  const playbackRef = useRef(playback);
+  const onCompleteRef = useRef(onComplete);
+  const onUnavailableRef = useRef(onUnavailable);
+  const speedRef = useRef(speed);
+  const outcome = useRef<"complete" | "unavailable" | null>(null);
   const labelled = alt.length > 0;
-  const showPlayer = allowMotion && !animationFailed;
+  const manual = playback === "hold" || playback === "once";
+  const showPlayer = allowMotion === true && !animationFailed;
   const src = MASCOT_ANIMATIONS[variant];
-  const paced = startDelay > 0 || endDelay > 0;
+  const paced = !manual && (startDelay > 0 || endDelay > 0);
 
   useEffect(() => {
     startDelayRef.current = startDelay;
     endDelayRef.current = endDelay;
-  }, [startDelay, endDelay]);
+    playbackRef.current = playback;
+    onCompleteRef.current = onComplete;
+    onUnavailableRef.current = onUnavailable;
+    speedRef.current = speed;
+  });
 
   const clearPhaseTimer = useCallback(() => {
     if (phaseTimer.current !== null) {
@@ -85,21 +115,43 @@ export function AnimatedMascot({
     [clearPhaseTimer],
   );
 
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
+  const signalComplete = useCallback(() => {
+    if (outcome.current || playbackRef.current !== "once") {
       return;
     }
 
-    const media = window.matchMedia(REDUCED_MOTION_QUERY);
+    outcome.current = "complete";
+    onCompleteRef.current?.();
+  }, []);
 
-    function sync() {
-      const allowed = !media.matches;
+  const signalUnavailable = useCallback(() => {
+    if (outcome.current || playbackRef.current !== "once") {
+      return;
+    }
+
+    outcome.current = "unavailable";
+    onUnavailableRef.current?.();
+  }, []);
+
+  useEffect(() => {
+    function applyMotion(allowed: boolean) {
       setAllowMotion(allowed);
       if (!allowed) {
         clearPhaseTimer();
         setAnimationReady(false);
         setAnimationFailed(false);
       }
+    }
+
+    if (typeof window.matchMedia !== "function") {
+      applyMotion(false);
+      return;
+    }
+
+    const media = window.matchMedia(REDUCED_MOTION_QUERY);
+
+    function sync() {
+      applyMotion(!media.matches);
     }
 
     sync();
@@ -110,11 +162,36 @@ export function AnimatedMascot({
     };
   }, [clearPhaseTimer]);
 
+  useEffect(() => {
+    if (playback !== "once" || allowMotion === null || outcome.current) {
+      return;
+    }
+
+    if (!allowMotion || animationFailed) {
+      signalUnavailable();
+      return;
+    }
+
+    if (!animationReady || !playerRef.current) {
+      return;
+    }
+
+    try {
+      if (speedRef.current !== 1) {
+        playerRef.current.setSpeed(speedRef.current);
+      }
+      playerRef.current.play();
+    } catch {
+      signalUnavailable();
+    }
+  }, [allowMotion, animationFailed, animationReady, playback, signalUnavailable]);
+
   const onPlayer = useCallback(
     (player: DotLottie | null) => {
       unbindPlayer.current?.();
       unbindPlayer.current = null;
       clearPhaseTimer();
+      playerRef.current = player;
 
       if (!player) {
         return;
@@ -127,13 +204,16 @@ export function AnimatedMascot({
         }
         opened = true;
         setAnimationReady(true);
-        if (startDelayRef.current <= 0) {
+        const mode = playbackRef.current;
+        if (mode === "hold" || (mode === "auto" && startDelayRef.current > 0)) {
+          // pause conserve la frame. stop() la ramènerait au début après un seek.
+          player.pause();
+          player.setFrame(0);
+        }
+        if (mode !== "auto" || startDelayRef.current <= 0) {
           return;
         }
 
-        // pause conserve la frame. stop() la ramènerait au début après un seek.
-        player.pause();
-        player.setFrame(0);
         schedulePhase(startDelayRef.current, () => {
           player.play();
         });
@@ -144,6 +224,11 @@ export function AnimatedMascot({
         setAnimationFailed(true);
       };
       const holdLastFrame = () => {
+        if (playbackRef.current === "once") {
+          signalComplete();
+          return;
+        }
+
         if (startDelayRef.current <= 0 && endDelayRef.current <= 0) {
           return;
         }
@@ -177,12 +262,13 @@ export function AnimatedMascot({
         showFirstFrame();
       }
     },
-    [clearPhaseTimer, schedulePhase],
+    [clearPhaseTimer, schedulePhase, signalComplete],
   );
 
   return (
     <span
       className={cn("relative inline-block aspect-square w-60 max-w-full", className)}
+      style={style}
       {...(labelled ? { role: "img" as const, "aria-label": alt } : {})}
     >
       <Mascot
@@ -198,8 +284,8 @@ export function AnimatedMascot({
         <DotLottieReact
           key={variant}
           src={src}
-          loop={!paced}
-          autoplay={startDelay <= 0}
+          loop={!manual && !paced}
+          autoplay={!manual && startDelay <= 0}
           aria-hidden
           dotLottieRefCallback={onPlayer}
           className={cn("absolute inset-0 size-full", animationReady ? "visible" : "invisible")}

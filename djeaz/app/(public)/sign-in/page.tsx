@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { AuthScreen } from "@/components/auth/auth-screen";
-import { CredentialsForm } from "@/components/auth/credentials-form";
 import {
   authPagePath,
   readReturnToParam,
@@ -24,6 +23,8 @@ export default async function SignInPage({
 
   return (
     <AuthScreen
+      mode="sign-in"
+      returnTo={returnTo}
       title="Connexion"
       description="Retrouvez vos événements et préparez votre prochaine soirée."
       alternate={{
@@ -31,8 +32,6 @@ export default async function SignInPage({
         prompt: "Pas encore de compte ?",
         label: "Inscription",
       }}
-    >
-      <CredentialsForm mode="sign-in" returnTo={returnTo} />
-    </AuthScreen>
+    />
   );
 }

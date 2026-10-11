@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useLayoutEffect, useRef } from "react";
 
 import { FieldError } from "@/components/forms/field-error";
 import { Button } from "@/components/ui/button";
@@ -8,20 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInAction, signUpAction } from "@/features/auth/actions";
 import { initialCredentialsState, type CredentialsField } from "@/features/auth/form-state";
+import { acceptAuthRedirect } from "@/features/auth/redirect-target";
 
 type CredentialsFormProps = {
   mode: "sign-in" | "sign-up";
   returnTo?: string;
+  onAuthenticated?: (redirectTo: string) => void;
 };
 
 const copy = {
   "sign-in": {
     submit: "Se connecter",
     pending: "Connexion en cours…",
+    success: "Connexion réussie…",
   },
   "sign-up": {
     submit: "Créer mon compte",
     pending: "Inscription en cours…",
+    success: "Compte créé !",
   },
 } as const;
 
@@ -69,10 +73,23 @@ function AuthField({
   );
 }
 
-export function CredentialsForm({ mode, returnTo }: CredentialsFormProps) {
+export function CredentialsForm({ mode, returnTo, onAuthenticated }: CredentialsFormProps) {
   const action = mode === "sign-in" ? signInAction : signUpAction;
   const [state, formAction, pending] = useActionState(action, initialCredentialsState);
   const labels = copy[mode];
+  const succeeded = Boolean(state.redirectTo);
+  const locked = pending || succeeded;
+  const progress = succeeded ? labels.success : pending ? labels.pending : "";
+  const announced = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (!state.redirectTo || announced.current === state.redirectTo) {
+      return;
+    }
+
+    announced.current = state.redirectTo;
+    onAuthenticated?.(acceptAuthRedirect(state.redirectTo));
+  }, [onAuthenticated, state.redirectTo]);
 
   return (
     <form
@@ -84,7 +101,7 @@ export function CredentialsForm({ mode, returnTo }: CredentialsFormProps) {
     >
       {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
       {state.formError ? <FieldError id="credentials-error" message={state.formError} /> : null}
-      <fieldset disabled={pending} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
+      <fieldset disabled={locked} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
         {mode === "sign-up" ? (
           <AuthField
             id="name"
@@ -128,17 +145,12 @@ export function CredentialsForm({ mode, returnTo }: CredentialsFormProps) {
             ticket={state.ticket}
           />
         ) : null}
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={pending}
-          aria-busy={pending || undefined}
-        >
-          {pending ? labels.pending : labels.submit}
+        <Button type="submit" className="w-full" disabled={locked} aria-busy={pending || undefined}>
+          {progress || labels.submit}
         </Button>
       </fieldset>
       <p role="status" aria-live="polite" className="min-h-6 text-sm text-text-secondary">
-        {pending ? labels.pending : ""}
+        {progress}
       </p>
     </form>
   );
