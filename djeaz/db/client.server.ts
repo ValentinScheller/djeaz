@@ -3,6 +3,7 @@ import "server-only";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
+import * as schema from "@/db/schema";
 import { getServerEnv } from "@/lib/env.server";
 
 const globalForDb = globalThis as typeof globalThis & {
@@ -33,4 +34,4 @@ function getPool(): Pool {
   return pool;
 }
 
-export const db = drizzle({ client: getPool() });
+export const db = drizzle({ client: getPool(), schema });

@@ -73,7 +73,7 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
-`db:generate` écrit les migrations dans `drizzle/` à partir de `db/schema.ts`. `db:migrate` les applique. Le schéma métier est vide : les premières tables arriveront en P2. `db:migrate` s'exécute déjà dans cet état.
+`db:generate` écrit les migrations dans `drizzle/` à partir de `db/schema.ts`. `db:migrate` les applique sur la base indiquée par `DATABASE_MIGRATION_URL`.
 
 ## Développement
 
