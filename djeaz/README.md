@@ -114,4 +114,4 @@ GitHub Actions (`.github/workflows/ci.yml`) s'exécute à chaque push sur `devel
 
 ## État du projet
 
-P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.5 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale et catalogue vide) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.
+P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.6 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale, catalogue vide et isolation multi-DJ) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.
