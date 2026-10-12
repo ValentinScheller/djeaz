@@ -10,7 +10,8 @@ Les chemins applicatifs sont relatifs à **`djeaz/`**. La documentation reste da
 - Fichiers et dossiers en `kebab-case`, sauf noms conventionnels (`README.md`, `AGENTS.md`, `CLAUDE.md` et documents de référence en majuscules) ; composants/types en `PascalCase` ; variables/fonctions en `camelCase` ; constantes fixes en `UPPER_SNAKE_CASE`.
 - SQL en `snake_case`, tables métier au pluriel ; propriétés TypeScript en `camelCase`. Mapper explicitement le schéma Better Auth si nécessaire.
 - Imports internes via `@/` vers la racine de `djeaz/` : `"@/*": ["./*"]` dans son `tsconfig.json` ; imports relatifs courts autorisés. Exports nommés, sauf conventions Next.js imposant un export par défaut.
-- Terminologie stable : `event`, `catalog`, `genre`, `track`, `response`, `selection`, `freeRequest`. Une réponse représente un participant ; ne pas créer un second modèle invité.
+- Terminologie stable dans le code : `event`, `catalog`, `catalogCategory`, `catalogTrack`, `musicTrack`, `musicGenre`, `response`, `selection`, `freeRequest`. Une réponse représente un participant ; ne pas créer un second modèle invité.
+- Vocabulaire de l'interface : **catégorie** = organisation personnelle du DJ dans son catalogue ; **genre musical** = métadonnée globale d'un morceau ; **bibliothèque musicale** = base globale DJEAZ partagée ; **catalogue** = sélection personnelle du DJ ; **envie** = demande d'invité, structurée (morceau de la bibliothèque) ou libre. Ne jamais afficher « genre » pour une catégorie de catalogue.
 
 ## 2. Outils et qualité du code
 
@@ -42,11 +43,13 @@ ESLint Next.js/TypeScript ; Prettier : deux espaces, points-virgules, guillemets
 
 ## 4. Entrées, erreurs et sécurité
 
-Schémas Zod partagés, validation serveur obligatoire. Normaliser les espaces périphériques ; pseudonyme de 1 à 80 caractères, nom d'événement de 1 à 160, genre de 1 à 80, titre/artiste de 1 à 200, demande libre de 1 à 500. Dédupliquer les IDs de morceaux. Une réponse contient au moins un morceau ou une demande. Centraliser les bornes, tranches d'âge et transitions.
+Schémas Zod partagés, validation serveur obligatoire. Normaliser les espaces périphériques ; pseudonyme de 1 à 80 caractères, nom d'événement de 1 à 160, catégorie de catalogue de 1 à 80, titre/artiste de 1 à 200, demande libre de 1 à 500 ; requête de recherche musicale bornée en longueur et nombre de résultats. Dédupliquer les IDs de morceaux. Une réponse contient au moins un morceau ou une envie ; une envie contient exactement un morceau global ou un texte libre. Centraliser les bornes, tranches d'âge et transitions.
 
 Les actions métier retournent une union discriminée : `{ ok: true, data }` ou `{ ok: false, error: { code, message, fieldErrors? } }`. Codes stables : `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `SURVEY_CLOSED`, `CONFLICT`, `RATE_LIMITED`, `INTERNAL_ERROR`. Une ressource privée appartenant à un autre DJ produit `NOT_FOUND`. Les endpoints HTTP métier mappent les mêmes erreurs aux statuts adéquats ; Better Auth conserve son contrat natif.
 
-Messages affichés en français, sans détails SQL ni stack trace. Journaliser les erreurs inattendues avec leur identifiant de diagnostic, sans mot de passe, token, cookie, connexion DB ou contenu de réponse.
+Messages affichés en français, sans détails SQL ni stack trace. Journaliser les erreurs inattendues avec leur identifiant de diagnostic, sans mot de passe, token, cookie, connexion DB, contenu de réponse, réponse brute ou credential de fournisseur externe.
+
+Les fournisseurs de métadonnées musicales sont appelés uniquement depuis des modules serveur, derrière une abstraction d'adaptateur : requête bornée et validée, données strictement nécessaires à la recherche, timeout, respect des limites de débit du fournisseur, échec propre sans bloquer l'application. Les recherches publiques sont soumises à la limitation de débit persistante. Aucune variable d'environnement de fournisseur n'est introduite avant l'adaptateur qui l'exige.
 
 Réutiliser la protection d'origine des Server Actions ; vérifier l'origine des Route Handlers métier qui écrivent avec des cookies. Configurer les origines autorisées de Better Auth. Le rendu de texte libre reste du texte, jamais du HTML injecté.
 
@@ -56,7 +59,14 @@ Drizzle par défaut ; SQL paramétré pour agrégations et verrous. Filtrer les 
 
 Appliquer les contraintes et transactions de l'architecture. Respecter l'ordre des verrous ; une version obsolète renvoie `CONFLICT`, sans mutation partielle.
 
-Versionner ensemble schéma, migration SQL et métadonnées Drizzle. Relire le SQL généré ; ne jamais modifier une migration déjà appliquée ni utiliser `db push` sur un environnement partagé. Un seed est idempotent, synthétique et ne réinitialise pas les données utilisateur. Le catalogue de référence a sa propre version.
+Versionner ensemble schéma, migration SQL et métadonnées Drizzle. Relire le SQL généré ; ne jamais modifier une migration déjà appliquée, même pour la rendre conforme à l'architecture cible : un changement de modèle passe par une nouvelle migration successive. Ne jamais utiliser `db push` sur un environnement partagé.
+
+Bibliothèque musicale et catalogues :
+
+- `db:seed` est idempotent, synthétique, petit, sans accès réseau et ne réinitialise pas les données utilisateur ; il ne charge jamais la bibliothèque réelle, qui relève d'un outil d'import séparé, exécuté volontairement.
+- Tout import ou enregistrement externe est un upsert idempotent protégé par l'unicité `(provider, externalId)` ; la provenance est tracée dans `music_track_sources` ; de bonnes métadonnées existantes ne sont pas écrasées aveuglément.
+- Un morceau n'entre dans la bibliothèque qu'après sélection explicite d'un utilisateur ou via l'outil d'import ; jamais en enregistrant tous les résultats d'une recherche.
+- La bibliothèque globale n'a pas de propriétaire ; catégories et associations de catalogue sont toujours filtrées par le propriétaire issu de la session.
 
 Toute migration destructive documente sa sauvegarde préalable et sa reprise ; restaurer le code ne restaure pas la base.
 
@@ -70,10 +80,10 @@ Sondage conçu pour mobile ; HTML sémantique, labels, clavier et focus visible.
 
 - **Vitest** : transitions, validations, calculs et règles métier ; tests `*.test.ts` près du code.
 - **React Testing Library** : comportements interactifs utiles ; tests `*.test.tsx`, sans dépendre des détails internes.
-- **Intégration PostgreSQL** : isolation multi-DJ, contraintes, transactions, concurrence, suppression et conservation historique.
-- **Playwright** : inscription/connexion → événement → ouverture → réponse → résultats ; modification sans double comptage, clôture et refus d'accès entre DJs.
+- **Intégration PostgreSQL** : isolation multi-DJ, contraintes, transactions, concurrence, suppression, conservation historique, déduplication et upsert concurrent de la bibliothèque.
+- **Playwright** : inscription/connexion → construction du catalogue → événement → ouverture → réponse → résultats ; modification sans double comptage, clôture et refus d'accès entre DJs.
 
-Base de test dédiée et reproductible. Couvrir secrets invalides, IDs d'un autre catalogue et changements concurrents. Aucun objectif arbitraire de couverture ; test de régression pour chaque correction métier.
+Base de test dédiée et reproductible. Couvrir secrets invalides, IDs d'un autre catalogue et changements concurrents. Les fournisseurs externes sont remplacés par des adaptateurs factices ou des fixtures ; recherches et replis externes doivent être testables sans API réelle, avec des morceaux synthétiques. La CI ne dépend jamais du réseau public ni de MusicBrainz, ListenBrainz ou TheAudioDB. Aucun objectif arbitraire de couverture ; test de régression pour chaque correction métier.
 
 Validation : format, lint, types, tests concernés et build passent ; comportements critiques couverts et documentation à jour. La CI des pushes sur `develop`/`main` inclut intégration/E2E ; la release répète les contrôles sur le commit tagué. Tout test ignoré est expliqué et suivi.
 

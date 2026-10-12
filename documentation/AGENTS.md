@@ -4,7 +4,7 @@
 
 ## 1. Comprendre le projet
 
-DJEAZ recueille les préférences musicales des invités pour aider les DJs à préparer leurs événements : dashboard privé et sondage public sans compte. Aucun générateur automatique de playlist.
+DJEAZ recueille les préférences musicales des invités pour aider les DJs à préparer leurs événements : dashboard privé et sondage public sans compte. Aucun générateur automatique de playlist. Une bibliothèque musicale globale est partagée ; chaque DJ construit son propre catalogue en catégories libres, qui ne sont pas les genres musicaux globaux.
 
 L'application se trouve dans `djeaz/`, les sources dans `documentation/`. Conserver cette organisation, sans introduire `src/`.
 
@@ -12,6 +12,7 @@ Consulter les documents selon la tâche :
 - `PROJECT.md` : finalité et périmètre.
 - `STACK.md` : technologies retenues.
 - `ARCHITECTURE.md` : responsabilités, données et règles métier.
+- `ROADMAP.md` : état d'avancement, ordre des phases et distinction entre ce qui est déjà implémenté et l'architecture cible.
 - `CONVENTIONS.md` : code, commandes, tests et livraison.
 - `GRAPHICS.md` : direction artistique ; **Plus Jakarta Sans** est la police d'interface validée.
 - `charte-graphique-djeaz.pdf` : charte visuelle.
@@ -28,9 +29,9 @@ Les instructions explicites de l'utilisateur priment. Ce fichier précise le com
 
 ## 3. Git : interdiction absolue
 
-**Aucun agent IA n'est autorisé à utiliser Git, sauf en lecture seule.** Aucune commande, intégration équivalente, opération déléguée ou manipulation directe des métadonnées du dépôt.
+**Aucun agent IA ni Cursor n'est autorisé à utiliser Git, y compris en lecture seule.** Aucune commande `git …` (ni `status`, `diff`, `log` ou `branch`), aucune intégration ou outillage équivalent, aucune opération déléguée, aucune lecture ni manipulation des métadonnées du dépôt (`.git/`).
 
-L'utilisateur prépare `develop` et réalise commits, pushes, merges et tags. Les merges directs vers `main` et la livraison par tag `vX.Y.Z` restent son workflow ; ils n'autorisent aucune action de l'agent.
+L'utilisateur réalise lui-même status, diff, log, branches, commits, pushes, merges, tags et toute autre opération Git. Les merges directs vers `main` et la livraison par tag `vX.Y.Z` restent son workflow ; ils n'autorisent aucune action de l'agent. Pour connaître l'état du dépôt, l'agent lit les fichiers de travail et `ROADMAP.md`, ou demande à l'utilisateur.
 
 Modifier les fichiers de travail uniquement. Ne pas lancer de livraison. Proposer éventuellement un message de commit court en anglais : `fix(surveys): preserve selections after retry`.
 

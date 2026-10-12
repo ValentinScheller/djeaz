@@ -18,9 +18,12 @@ Neon
 
 Vercel
 └── Hosting & Deployment
+
+Music metadata providers
+└── MusicBrainz, ListenBrainz (server-side, local-first)
 ```
 
-L'objectif est de conserver une architecture légère avec une seule application full-stack et le minimum d'infrastructure à administrer.
+L'objectif est de conserver une architecture légère avec une seule application full-stack et le minimum d'infrastructure à administrer. Les fournisseurs de métadonnées musicales sont des sources externes consultées côté serveur, pas une infrastructure à administrer.
 
 ---
 
@@ -116,15 +119,17 @@ Neon fournit la base de données PostgreSQL du projet.
 Elle stocke notamment :
 
 - les DJs ;
+- la bibliothèque musicale globale : morceaux et métadonnées, provenance chez les fournisseurs, genres musicaux globaux ;
+- les catalogues personnels : catégories de chaque DJ et associations catalogue ↔ morceau ;
 - les événements ;
 - les participants ;
-- les genres musicaux ;
-- les morceaux ;
 - les sélections ;
-- les demandes personnalisées ;
-- les données nécessaires à l'authentification.
+- les envies des invités, structurées ou libres ;
+- les données nécessaires à l'authentification et à la limitation de débit.
 
-PostgreSQL est particulièrement adapté au projet grâce à la nature relationnelle des données et aux besoins d'agrégation nécessaires pour produire les statistiques.
+La bibliothèque musicale est partagée et sans propriétaire ; les catalogues sont privés. Un morceau n'est stocké qu'une fois, quel que soit le nombre de DJs qui l'ajoutent à leur catalogue.
+
+PostgreSQL est particulièrement adapté au projet grâce à la nature relationnelle des données, à la recherche textuelle sur titres et artistes et aux besoins d'agrégation nécessaires pour produire les statistiques.
 
 ### Data Flow
 
@@ -178,12 +183,49 @@ Les données Better Auth sont stockées dans la même base PostgreSQL Neon que l
 
 ---
 
+## Music Metadata Providers
+
+**Role:** External music metadata sources
+
+DJEAZ recherche des **métadonnées** musicales (titre, artiste, album, identifiants, pochette) pour alimenter sa bibliothèque globale. Il ne s'agit pas d'une intégration de streaming : aucun audio, extrait ou flux n'est récupéré ni lu.
+
+### Local-first Flow
+
+```text
+Browser
+   │
+   ▼
+Next.js Server
+   │
+   ▼
+Bibliothèque PostgreSQL locale
+   │
+   ▼ si nécessaire
+Provider externe
+```
+
+Le navigateur n'appelle jamais directement un fournisseur, et aucun secret de fournisseur ne quitte le serveur. La bibliothèque locale est interrogée d'abord ; un fournisseur n'est sollicité qu'en l'absence de résultat satisfaisant, et seul le morceau choisi par l'utilisateur est enregistré.
+
+### Providers
+
+| Provider | Statut | Rôle envisagé |
+|---|---|---|
+| **MusicBrainz** | Source principale envisagée | Identité des enregistrements, titres, artistes, releases, ISRC |
+| **ListenBrainz** | Source envisagée | Popularité et classements, candidats de l'import initial |
+| **TheAudioDB** | Enrichissement potentiel | Métadonnées complémentaires et pochettes, selon conditions et plan |
+| **Last.fm** | À réévaluer | Aucune dépendance de production tant que la licence n'est pas clarifiée |
+
+Aucun fournisseur n'est garanti, gratuit ou définitif. Conditions d'utilisation, quotas et droits sur les métadonnées et pochettes sont revalidés avant la mise en production. Spotify, Deezer et les autres services de streaming ne font pas partie de la stack.
+
+---
+
 ## Public / Private Separation
 
 ### Private
 
 ```text
 /dashboard
+/catalog
 /events/*
 /settings
 ```
@@ -219,6 +261,8 @@ BETTER_AUTH_URL=
 
 Ils ne doivent jamais être exposés au navigateur ni versionnés dans le repository.
 
+Les éventuels credentials de fournisseurs de métadonnées musicales seront server-only ; leurs variables ne sont définies qu'au moment où l'adaptateur correspondant est implémenté.
+
 ---
 
 ## Architecture Summary
@@ -239,13 +283,15 @@ Ils ne doivent jamais être exposés au navigateur ni versionnés dans le reposi
                  │ Backend   │
                  └─────┬─────┘
                        │
-             ┌─────────┴─────────┐
-             │                   │
-             ▼                   ▼
-      ┌─────────────┐     ┌─────────────┐
-      │ Better Auth │     │    Neon     │
-      │             │────▶│ PostgreSQL  │
-      └─────────────┘     └─────────────┘
+             ┌─────────┼─────────────────────┐
+             │         │                     │
+             ▼         ▼                     ▼
+      ┌─────────────┐ ┌─────────────┐ ┌────────────────────┐
+      │ Better Auth │ │    Neon     │ │  Music metadata    │
+      │             │▶│ PostgreSQL  │ │  providers         │
+      └─────────────┘ └─────────────┘ │ (server-side only, │
+                                      │  local-first)      │
+                                      └────────────────────┘
 ```
 
 ---
@@ -257,8 +303,9 @@ Ils ne doivent jamais être exposés au navigateur ni versionnés dans le reposi
 | **TypeScript** | Main programming language |
 | **Next.js** | Frontend, backend, routing and business logic |
 | **Better Auth** | Authentication and sessions |
-| **Neon** | PostgreSQL database |
+| **Neon** | PostgreSQL database, including the global music library and personal catalogs |
 | **Vercel** | Hosting, deployment and runtime |
+| **MusicBrainz, ListenBrainz** (TheAudioDB potential) | External music metadata sources, queried server-side after the local library |
 
 ---
 
@@ -271,6 +318,7 @@ The initial architecture remains intentionally simple:
 ✓ One PostgreSQL database
 ✓ Authentication integrated into the application
 ✓ Server-side database access
+✓ Local-first music library, external metadata providers as fallback
 ✓ Public guest experience without account
 ✓ Automated deployment
 ```
@@ -282,6 +330,7 @@ The MVP does not require:
 ✗ Microservices
 ✗ Dedicated authentication server
 ✗ Self-hosted PostgreSQL server
+✗ Streaming integration, audio playback or previews
 ✗ Complex infrastructure
 ```
 
