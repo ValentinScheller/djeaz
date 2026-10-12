@@ -7,6 +7,7 @@ const headerStore = vi.hoisted(() => ({
 }));
 
 const getSession = vi.hoisted(() => vi.fn());
+const ensureCatalogForUser = vi.hoisted(() => vi.fn(async () => ({ id: "catalog-1" })));
 
 vi.mock("next/headers", () => ({
   headers: async () => headerStore.current,
@@ -22,6 +23,10 @@ vi.mock("@/features/auth/server", () => ({
   auth: {
     getSession,
   },
+}));
+
+vi.mock("@/features/catalog/ensure-catalog.server", () => ({
+  ensureCatalogForUser,
 }));
 
 import {
@@ -69,6 +74,7 @@ function expectInternalSignIn(href: string): string {
 beforeEach(() => {
   headerStore.current = new Headers();
   getSession.mockReset();
+  ensureCatalogForUser.mockClear();
 });
 
 test("une session absente répond UNAUTHENTICATED", async () => {
@@ -116,12 +122,15 @@ test("une page privée redirige vers une connexion interne", async () => {
   await expect(requirePageSession("/dashboard")).rejects.toThrow(
     "REDIRECT:/sign-in?returnTo=%2Fdashboard",
   );
+  expect(ensureCatalogForUser).not.toHaveBeenCalled();
 });
 
 test("une session valide laisse passer la page", async () => {
   getSession.mockResolvedValue(session);
 
   await expect(requirePageSession("/settings")).resolves.toBe(session);
+  expect(ensureCatalogForUser).toHaveBeenCalledOnce();
+  expect(ensureCatalogForUser).toHaveBeenCalledWith("user-from-session");
 });
 
 test("le retour encode les chemins internes", () => {

@@ -8,6 +8,7 @@ vi.mock("@/components/brand/animated-mascot", () => ({
 }));
 
 const getSession = vi.hoisted(() => vi.fn());
+const ensureCatalogForUser = vi.hoisted(() => vi.fn(async () => ({ id: "catalog-1" })));
 
 vi.mock("next/headers", () => ({
   headers: async () => new Headers(),
@@ -23,6 +24,10 @@ vi.mock("@/features/auth/server", () => ({
   auth: {
     getSession,
   },
+}));
+
+vi.mock("@/features/catalog/ensure-catalog.server", () => ({
+  ensureCatalogForUser,
 }));
 
 import Home from "@/app/(public)/page";
@@ -51,6 +56,7 @@ const session = {
 
 beforeEach(() => {
   getSession.mockReset();
+  ensureCatalogForUser.mockClear();
 });
 
 test("la vitrine ne consulte pas la session", () => {
@@ -79,4 +85,18 @@ test.each([
 
   expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
   expect(getSession).toHaveBeenCalledOnce();
+  expect(ensureCatalogForUser).toHaveBeenCalledOnce();
+  expect(ensureCatalogForUser).toHaveBeenCalledWith("user-from-session");
+});
+
+test("le catalogue vide invite à préparer la première catégorie", async () => {
+  getSession.mockResolvedValue(session);
+
+  render(await CatalogPage());
+
+  expect(screen.getByRole("heading", { name: "Créer ma première catégorie" })).toBeInTheDocument();
+  expect(screen.getByText(/Préparez votre catalogue/)).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Créer ma première catégorie" }),
+  ).not.toBeInTheDocument();
 });

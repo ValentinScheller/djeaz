@@ -4,7 +4,19 @@ import { Pool } from "pg";
 import { afterAll, expect, test } from "vitest";
 
 import * as schema from "@/db/schema";
-import { account, catalogs, genres, rateLimits, session, tracks, user } from "@/db/schema";
+import {
+  account,
+  catalogCategories,
+  catalogs,
+  catalogTracks,
+  musicGenres,
+  musicTrackGenres,
+  musicTracks,
+  musicTrackSources,
+  rateLimits,
+  session,
+  user,
+} from "@/db/schema";
 
 import { resolveTestDatabaseUrl } from "./database";
 
@@ -58,107 +70,160 @@ test("un utilisateur ne peut avoir qu'un seul catalogue", async () => {
   await insertUser("user-1", "un@example.com");
   await insertUser("user-2", "deux@example.com");
 
-  await db.insert(catalogs).values({ ownerId: "user-1", seedVersion: "ref-1" });
-  const [other] = await db
-    .insert(catalogs)
-    .values({ ownerId: "user-2", seedVersion: "ref-1" })
-    .returning();
+  await db.insert(catalogs).values({ ownerId: "user-1" });
+  const [other] = await db.insert(catalogs).values({ ownerId: "user-2" }).returning();
 
   expect(other?.ownerId).toBe("user-2");
   expect(other?.revision).toBe(0);
 
+  await expectPostgresCode(() => db.insert(catalogs).values({ ownerId: "user-1" }), "23505");
+});
+
+test("le catalogue référence un utilisateur existant", async () => {
+  await expectPostgresCode(() => db.insert(catalogs).values({ ownerId: "absent" }), "23503");
+});
+
+test("une provenance et un lien morceau-genre ne peuvent pas être dupliqués", async () => {
+  const [track] = await db
+    .insert(musicTracks)
+    .values({ title: "Titre synthétique", artist: "Artiste synthétique" })
+    .returning();
+  const [otherTrack] = await db
+    .insert(musicTracks)
+    .values({ title: "Autre titre", artist: "Autre artiste" })
+    .returning();
+  const [genre] = await db.insert(musicGenres).values({ name: "Genre synthétique" }).returning();
+
+  await db.insert(musicTrackSources).values({
+    musicTrackId: track!.id,
+    provider: "synthetic",
+    externalId: "ext-1",
+  });
   await expectPostgresCode(
-    () => db.insert(catalogs).values({ ownerId: "user-1", seedVersion: "ref-2" }),
+    () =>
+      db.insert(musicTrackSources).values({
+        musicTrackId: otherTrack!.id,
+        provider: "synthetic",
+        externalId: "ext-1",
+      }),
+    "23505",
+  );
+
+  await db.insert(musicTrackGenres).values({
+    musicTrackId: track!.id,
+    musicGenreId: genre!.id,
+  });
+  await expectPostgresCode(
+    () =>
+      db.insert(musicTrackGenres).values({
+        musicTrackId: track!.id,
+        musicGenreId: genre!.id,
+      }),
     "23505",
   );
 });
 
-test("le catalogue référence un utilisateur existant", async () => {
-  await expectPostgresCode(
-    () => db.insert(catalogs).values({ ownerId: "absent", seedVersion: "ref-1" }),
-    "23503",
-  );
-});
-
-test("un genre référence un catalogue et un morceau référence un genre", async () => {
+test("un morceau n'entre qu'une fois par catalogue, mais peut figurer dans deux catalogues", async () => {
   await insertUser("user-1", "un@example.com");
-  const [catalog] = await db
-    .insert(catalogs)
-    .values({ ownerId: "user-1", seedVersion: "ref-1" })
-    .returning();
-
-  await expectPostgresCode(
-    () =>
-      db.insert(genres).values({
-        catalogId: "00000000-0000-4000-8000-000000000000",
-        name: "House",
-        displayOrder: 0,
-      }),
-    "23503",
-  );
-
-  const [genre] = await db
-    .insert(genres)
-    .values({ catalogId: catalog!.id, name: "House", displayOrder: 0 })
-    .returning();
-
-  await expectPostgresCode(
-    () =>
-      db.insert(tracks).values({
-        genreId: "00000000-0000-4000-8000-000000000000",
-        title: "Titre",
-        artist: "Artiste",
-        displayOrder: 0,
-      }),
-    "23503",
-  );
-
+  await insertUser("user-2", "deux@example.com");
   const [track] = await db
-    .insert(tracks)
-    .values({
-      genreId: genre!.id,
-      title: "Titre",
-      artist: "Artiste",
-      displayOrder: 1,
-    })
+    .insert(musicTracks)
+    .values({ title: "Titre synthétique", artist: "Artiste synthétique" })
+    .returning();
+  const [catalogA] = await db.insert(catalogs).values({ ownerId: "user-1" }).returning();
+  const [catalogB] = await db.insert(catalogs).values({ ownerId: "user-2" }).returning();
+  const [categoryA] = await db
+    .insert(catalogCategories)
+    .values({ catalogId: catalogA!.id, name: "Cocktail", displayOrder: 0 })
+    .returning();
+  const [categoryB] = await db
+    .insert(catalogCategories)
+    .values({ catalogId: catalogB!.id, name: "Ouverture", displayOrder: 0 })
     .returning();
 
-  expect(track?.genreId).toBe(genre!.id);
+  await db.insert(catalogTracks).values({
+    catalogId: catalogA!.id,
+    categoryId: categoryA!.id,
+    musicTrackId: track!.id,
+    displayOrder: 0,
+  });
+  await db.insert(catalogTracks).values({
+    catalogId: catalogB!.id,
+    categoryId: categoryB!.id,
+    musicTrackId: track!.id,
+    displayOrder: 1,
+  });
+
+  await expectPostgresCode(
+    () =>
+      db.insert(catalogTracks).values({
+        catalogId: catalogA!.id,
+        categoryId: categoryA!.id,
+        musicTrackId: track!.id,
+        displayOrder: 2,
+      }),
+    "23505",
+  );
 });
 
-test("supprimer un genre supprime ses morceaux et bloque la suppression du catalogue", async () => {
+test("PostgreSQL refuse une catégorie d'un autre catalogue", async () => {
   await insertUser("user-1", "un@example.com");
-  const [catalog] = await db
-    .insert(catalogs)
-    .values({ ownerId: "user-1", seedVersion: "ref-1" })
+  await insertUser("user-2", "deux@example.com");
+  const [track] = await db
+    .insert(musicTracks)
+    .values({ title: "Titre synthétique", artist: "Artiste synthétique" })
     .returning();
-  const [genre] = await db
-    .insert(genres)
-    .values({ catalogId: catalog!.id, name: "House", displayOrder: 0 })
+  const [catalogA] = await db.insert(catalogs).values({ ownerId: "user-1" }).returning();
+  const [catalogB] = await db.insert(catalogs).values({ ownerId: "user-2" }).returning();
+  const [categoryB] = await db
+    .insert(catalogCategories)
+    .values({ catalogId: catalogB!.id, name: "Rap FR", displayOrder: 0 })
     .returning();
-  await db.insert(tracks).values({
-    genreId: genre!.id,
-    title: "Titre",
-    artist: "Artiste",
+
+  await expectPostgresCode(
+    () =>
+      db.insert(catalogTracks).values({
+        catalogId: catalogA!.id,
+        categoryId: categoryB!.id,
+        musicTrackId: track!.id,
+        displayOrder: 0,
+      }),
+    "23503",
+  );
+});
+
+test("supprimer une catégorie retire ses associations et conserve le morceau global", async () => {
+  await insertUser("user-1", "un@example.com");
+  const [track] = await db
+    .insert(musicTracks)
+    .values({ title: "Titre synthétique", artist: "Artiste synthétique" })
+    .returning();
+  const [catalog] = await db.insert(catalogs).values({ ownerId: "user-1" }).returning();
+  const [category] = await db
+    .insert(catalogCategories)
+    .values({ catalogId: catalog!.id, name: "Cocktail", displayOrder: 0 })
+    .returning();
+  await db.insert(catalogTracks).values({
+    catalogId: catalog!.id,
+    categoryId: category!.id,
+    musicTrackId: track!.id,
     displayOrder: 0,
   });
 
   await expectPostgresCode(() => db.delete(catalogs).where(eq(catalogs.id, catalog!.id)), "23503");
+  await expectPostgresCode(
+    () => db.delete(musicTracks).where(eq(musicTracks.id, track!.id)),
+    "23503",
+  );
 
-  const genresAfterBlockedDelete = await db
-    .select()
-    .from(genres)
-    .where(eq(genres.catalogId, catalog!.id));
-  expect(genresAfterBlockedDelete).toHaveLength(1);
+  await db.delete(catalogCategories).where(eq(catalogCategories.id, category!.id));
 
-  await db.delete(genres).where(eq(genres.id, genre!.id));
-
-  const remainingTracks = await db.select().from(tracks).where(eq(tracks.genreId, genre!.id));
-  expect(remainingTracks).toHaveLength(0);
+  const remainingAssociations = await db.select().from(catalogTracks);
+  const remainingTracks = await db.select().from(musicTracks);
+  expect(remainingAssociations).toHaveLength(0);
+  expect(remainingTracks).toHaveLength(1);
 
   await db.delete(catalogs).where(eq(catalogs.id, catalog!.id));
-  const remainingCatalogs = await db.select().from(catalogs);
-  expect(remainingCatalogs).toHaveLength(0);
 });
 
 test("un catalogue empêche la suppression de l'utilisateur ; sans catalogue, session et compte partent avec lui", async () => {
@@ -177,7 +242,7 @@ test("un catalogue empêche la suppression de l'utilisateur ; sans catalogue, se
     userId: "user-1",
     updatedAt: new Date("2026-10-11T00:00:00.000Z"),
   });
-  await db.insert(catalogs).values({ ownerId: "user-1", seedVersion: "ref-1" });
+  await db.insert(catalogs).values({ ownerId: "user-1" });
 
   await expectPostgresCode(() => db.delete(user).where(eq(user.id, "user-1")), "23503");
 

@@ -22,6 +22,13 @@
       "when": 1791750932436,
       "tag": "0002_artist_name",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791846510488,
+      "tag": "0003_dazzling_mojo",
+      "breakpoints": true
     }
   ]
 }

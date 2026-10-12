@@ -64,6 +64,19 @@ async function createAuth() {
     advanced: {
       disableOriginCheck: false,
     },
+    // Hook officiel 1.7.7 : après le commit de `user.create`.
+    // Import différé : charger ce module ne doit pas ouvrir la base.
+    databaseHooks: {
+      user: {
+        create: {
+          async after(createdUser) {
+            const { ensureCatalogForUser } =
+              await import("@/features/catalog/ensure-catalog.server");
+            await ensureCatalogForUser(createdUser.id);
+          },
+        },
+      },
+    },
   });
 }
 

@@ -139,5 +139,9 @@ export async function requirePageSession(returnPath: string): Promise<CurrentSes
     redirect(signInRedirectPath(returnPath));
   }
 
+  // Reprise : un compte déjà créé sans catalogue le reçoit ici, jamais depuis le client.
+  const { ensureCatalogForUser } = await import("@/features/catalog/ensure-catalog.server");
+  await ensureCatalogForUser(result.data.user.id);
+
   return result.data;
 }
