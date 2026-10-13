@@ -18,6 +18,7 @@ function e2eServerEnv(): Record<string, string> {
   env.DATABASE_MIGRATION_URL = e2eDatabaseUrl;
   env.BETTER_AUTH_SECRET = "e2e-placeholder-secret-32-characters-min";
   env.BETTER_AUTH_URL = baseURL;
+  env.MUSIC_PROVIDER = "fake";
   return env;
 }
 

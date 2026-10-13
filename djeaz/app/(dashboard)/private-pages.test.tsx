@@ -30,6 +30,19 @@ vi.mock("@/features/catalog/ensure-catalog.server", () => ({
   ensureCatalogForUser,
 }));
 
+vi.mock("@/features/catalog/view.server", () => ({
+  loadCatalogWorkspace: vi.fn(async () => ({ revision: 0, categories: [] })),
+}));
+
+vi.mock("@/features/catalog/actions", () => ({
+  createCategoryAction: vi.fn(),
+  addLocalTrackAction: vi.fn(),
+  addExternalTrackAction: vi.fn(),
+  removeCatalogTrackAction: vi.fn(),
+  moveCatalogTrackAction: vi.fn(),
+  reorderCatalogTrackAction: vi.fn(),
+}));
+
 import Home from "@/app/(public)/page";
 import CatalogPage from "@/app/(dashboard)/catalog/page";
 import DashboardPage from "@/app/(dashboard)/dashboard/page";

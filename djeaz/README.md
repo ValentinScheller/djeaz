@@ -96,6 +96,14 @@ Compte de démonstration, réservé au développement :
 
 Si ce compte existe déjà, le seed ne le recrée pas et ne change pas son mot de passe. Il n'est pas lancé au démarrage, par les migrations, ni en CI.
 
+## Import musical
+
+```bash
+pnpm music:import -- --limit 20
+```
+
+Commande distincte du seed. Elle n'est lancée ni au démarrage, ni par une migration, ni par une Server Action, ni en CI. ListenBrainz propose des candidats par popularité ; MusicBrainz canonicalise chaque recording ; Cover Art Archive peut fournir une URL de pochette. `--limit` est obligatoire. Un checkpoint `.music-import-checkpoint.json` permet de reprendre sans doublon. Un fichier absent démarre un checkpoint neuf. Un fichier présent mais illisible ou invalide arrête l'import sans le modifier. Un recording en échec n'est pas marqué fait : il est réessayé au lancement suivant et reprend alors une place dans `--limit`. La cible est la base de `DATABASE_URL`, affichée sans mot de passe. Le User-Agent non secret `MUSICBRAINZ_USER_AGENT` est requis pour un appel réel (voir `.env.example`).
+
 ## Développement
 
 ```bash
@@ -104,7 +112,7 @@ pnpm dev
 
 Next.js sert l'application sur [http://localhost:3000](http://localhost:3000).
 
-En place : page d'accueil, Better Auth (inscription sur `/sign-up`, connexion sur `/sign-in`, déconnexion, sessions, nom d'artiste `artistName`), protection serveur des espaces privés (`/dashboard`, `/catalog`, `/settings`), catalogue vide créé à l'inscription. La sidebar du dashboard affiche le nom d'artiste et l'e-mail de la session. `/dashboard` indique qu'aucun événement n'existe encore. La gestion du catalogue, la création d'événements et le sondage ne sont pas encore implémentés.
+En place : page d'accueil, Better Auth (inscription sur `/sign-up`, connexion sur `/sign-in`, déconnexion, sessions, nom d'artiste `artistName`), protection serveur des espaces privés (`/dashboard`, `/catalog`, `/settings`), catalogue vide créé à l'inscription. La sidebar du dashboard affiche le nom d'artiste et l'e-mail de la session. `/dashboard` indique qu'aucun événement n'existe encore. `/catalog` permet de créer une catégorie, de rechercher la bibliothèque DJEAZ, d'élargir explicitement vers MusicBrainz, puis d'ajouter, retirer, déplacer et réordonner des morceaux. La création d'événements et le sondage ne sont pas encore implémentés.
 
 ## Qualité et tests
 
@@ -135,4 +143,4 @@ GitHub Actions (`.github/workflows/ci.yml`) s'exécute à chaque push sur `devel
 
 ## État du projet
 
-P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.8 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale, catalogue vide, isolation multi-DJ, seed synthétique et dashboard connecté) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.
+P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.9 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale, catalogue, isolation multi-DJ, seed synthétique, dashboard connecté, recherche musicale et import contrôlé) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.

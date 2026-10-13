@@ -32,6 +32,7 @@ async function signOut(page: Page) {
 }
 
 test("inscription, déconnexion puis connexion mènent au dashboard", async ({ page }) => {
+  test.setTimeout(90_000);
   const email = `dj-${test.info().project.name}-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
   const password = "motdepasse";
 
@@ -39,11 +40,26 @@ test("inscription, déconnexion puis connexion mènent au dashboard", async ({ p
   await page.getByLabel("Nom / Prénom").fill("Camille Martin");
   await page.getByLabel("Nom d'artiste").fill("DJ Nova");
   await page.getByLabel("Adresse e-mail").fill(email);
-  await page.getByLabel("Mot de passe", { exact: true }).fill(password);
-  await page.getByLabel("Confirmation du mot de passe").fill(password);
-  await page.getByRole("button", { name: "Créer mon compte" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20_000 });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await page.getByLabel("Mot de passe", { exact: true }).fill(password);
+    await page.getByLabel("Confirmation du mot de passe").fill(password);
+    await page.getByRole("button", { name: "Créer mon compte" }).click();
+    const reached = await page.waitForURL(/\/dashboard$/, { timeout: 12_000 }).then(
+      () => true,
+      () => false,
+    );
+    if (reached) {
+      break;
+    }
+    if ((await page.getByText("Trop de tentatives").isVisible()) && attempt < 2) {
+      await page.waitForTimeout(11_000);
+      continue;
+    }
+    break;
+  }
+
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expectSignedInIdentity(page, email);
 
@@ -56,11 +72,25 @@ test("inscription, déconnexion puis connexion mènent au dashboard", async ({ p
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/sign-in\?returnTo=%2Fdashboard$/);
 
-  await page.getByLabel("Adresse e-mail").fill(email);
-  await page.getByLabel("Mot de passe").fill(password);
-  await page.getByRole("button", { name: "Se connecter" }).click();
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await page.getByLabel("Adresse e-mail").fill(email);
+    await page.getByLabel("Mot de passe").fill(password);
+    await page.getByRole("button", { name: "Se connecter" }).click();
+    const reached = await page.waitForURL(/\/dashboard$/, { timeout: 12_000 }).then(
+      () => true,
+      () => false,
+    );
+    if (reached) {
+      break;
+    }
+    if ((await page.getByText("Trop de tentatives").isVisible()) && attempt < 2) {
+      await page.waitForTimeout(11_000);
+      continue;
+    }
+    break;
+  }
 
-  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expectSignedInIdentity(page, email);
 });

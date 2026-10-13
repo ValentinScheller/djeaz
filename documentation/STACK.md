@@ -20,7 +20,7 @@ Vercel
 └── Hosting & Deployment
 
 Music metadata providers
-└── MusicBrainz, ListenBrainz (server-side, local-first)
+└── MusicBrainz (recherche runtime), ListenBrainz (import), Cover Art Archive (URL)
 ```
 
 L'objectif est de conserver une architecture légère avec une seule application full-stack et le minimum d'infrastructure à administrer. Les fournisseurs de métadonnées musicales sont des sources externes consultées côté serveur, pas une infrastructure à administrer.
@@ -187,7 +187,7 @@ Les données Better Auth sont stockées dans la même base PostgreSQL Neon que l
 
 **Role:** External music metadata sources
 
-DJEAZ recherche des **métadonnées** musicales (titre, artiste, album, identifiants, pochette) pour alimenter sa bibliothèque globale. Il ne s'agit pas d'une intégration de streaming : aucun audio, extrait ou flux n'est récupéré ni lu.
+DJEAZ recherche des **métadonnées** musicales (titre, artiste, album, désambiguïsation, identifiants, pochette) pour alimenter sa bibliothèque globale. Il ne s'agit pas d'une intégration de streaming : aucun audio, extrait ou flux n'est récupéré ni lu.
 
 ### Local-first Flow
 
@@ -197,25 +197,24 @@ Browser
    ▼
 Next.js Server
    │
-   ▼
-Bibliothèque PostgreSQL locale
+   ├── Bibliothèque PostgreSQL locale (automatique, max 20)
    │
-   ▼ si nécessaire
-Provider externe
+   └── MusicBrainz, seulement après « Rechercher plus largement » (max 10)
 ```
 
-Le navigateur n'appelle jamais directement un fournisseur, et aucun secret de fournisseur ne quitte le serveur. La bibliothèque locale est interrogée d'abord ; un fournisseur n'est sollicité qu'en l'absence de résultat satisfaisant, et seul le morceau choisi par l'utilisateur est enregistré.
+Le navigateur n'appelle jamais directement un fournisseur. La bibliothèque locale est interrogée dès 2 caractères. MusicBrainz n'est sollicité qu'après l'action explicite « Rechercher plus largement », et seul le morceau choisi par l'utilisateur est enregistré, après revalidation serveur. ListenBrainz n'intervient pas dans cette recherche : il alimente uniquement l'import initial.
 
 ### Providers
 
-| Provider | Statut | Rôle envisagé |
+| Provider | Statut | Rôle |
 |---|---|---|
-| **MusicBrainz** | Source principale envisagée | Identité des enregistrements, titres, artistes, releases, ISRC |
-| **ListenBrainz** | Source envisagée | Popularité et classements, candidats de l'import initial |
-| **TheAudioDB** | Enrichissement potentiel | Métadonnées complémentaires et pochettes, selon conditions et plan |
-| **Last.fm** | À réévaluer | Aucune dépendance de production tant que la licence n'est pas clarifiée |
+| **MusicBrainz** | Source canonique | Recherche runtime et identité des recordings (Recording MBID), titres, artistes, releases, ISRC |
+| **ListenBrainz** | Import uniquement | Popularité : artistes, recordings d'un artiste, recordings globaux |
+| **Cover Art Archive** | Artwork, URL seule | Miniature après sélection ou import ; aucun téléchargement ni cache |
+| **TheAudioDB** | Non utilisé | Aucun adaptateur en P2.9 |
+| **Last.fm** | Non utilisé | Aucun adaptateur en P2.9 |
 
-Aucun fournisseur n'est garanti, gratuit ou définitif. Conditions d'utilisation, quotas et droits sur les métadonnées et pochettes sont revalidés avant la mise en production. Spotify, Deezer et les autres services de streaming ne font pas partie de la stack.
+Conditions d'utilisation, quotas et droits sur les métadonnées et pochettes sont revalidés avant la mise en production. Spotify, Deezer et les autres services de streaming ne font pas partie de la stack. L'import (`pnpm music:import`) enchaîne ListenBrainz, MusicBrainz et Cover Art Archive hors démarrage, hors migration et hors CI.
 
 ---
 
@@ -257,11 +256,13 @@ DATABASE_URL=
 
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=
+# User-Agent non secret, lu au premier appel MusicBrainz / ListenBrainz / Cover Art Archive.
+# MUSICBRAINZ_USER_AGENT=DJEAZ/0.1.0 (https://djeaz.com)
 ```
 
 Ils ne doivent jamais être exposés au navigateur ni versionnés dans le repository.
 
-Les éventuels credentials de fournisseurs de métadonnées musicales seront server-only ; leurs variables ne sont définies qu'au moment où l'adaptateur correspondant est implémenté.
+`MUSICBRAINZ_USER_AGENT` n'est pas un secret et n'est pas exigé par `pnpm build` ni par les tests. Aucun credential MusicBrainz, ListenBrainz ou Cover Art Archive n'est requis.
 
 ---
 
@@ -305,7 +306,9 @@ Les éventuels credentials de fournisseurs de métadonnées musicales seront ser
 | **Better Auth** | Authentication and sessions |
 | **Neon** | PostgreSQL database, including the global music library and personal catalogs |
 | **Vercel** | Hosting, deployment and runtime |
-| **MusicBrainz, ListenBrainz** (TheAudioDB potential) | External music metadata sources, queried server-side after the local library |
+| **MusicBrainz** | Recherche runtime et identité canonique des recordings, côté serveur |
+| **ListenBrainz** | Popularité de l'import initial uniquement |
+| **Cover Art Archive** | URL de pochette, sans téléchargement ni cache |
 
 ---
 
@@ -318,7 +321,7 @@ The initial architecture remains intentionally simple:
 ✓ One PostgreSQL database
 ✓ Authentication integrated into the application
 ✓ Server-side database access
-✓ Local-first music library, external metadata providers as fallback
+✓ Local-first music library; MusicBrainz only after an explicit wider search
 ✓ Public guest experience without account
 ✓ Automated deployment
 ```

@@ -128,6 +128,14 @@ async function applySql(pool: Pool, sql: string): Promise<void> {
   }
 }
 
+async function assertDisambiguationColumn(pool: Pool): Promise<void> {
+  const columns = await pool.query<{ column_name: string }>(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'music_tracks' AND column_name = 'disambiguation'`,
+  );
+  expect(columns.rows.map((row) => row.column_name)).toEqual(["disambiguation"]);
+}
+
 async function assertTargetSchema(pool: Pool): Promise<void> {
   const current = await pool.query<{ current_database: string }>(
     "SELECT current_database() AS current_database",
@@ -161,6 +169,14 @@ async function assertTargetSchema(pool: Pool): Promise<void> {
     [...EXPECTED_CONSTRAINTS].sort(),
   );
 }
+
+test("0004 ajoute une désambiguïsation nullable", () => {
+  const sql = migrationSql("0004");
+  expect(sql).toContain('ALTER TABLE "music_tracks" ADD COLUMN "disambiguation" text');
+  expect(sql).not.toMatch(/not null/i);
+  expect(sql).not.toMatch(/drop /i);
+  expect(journalEntry("0004").when).toBeGreaterThan(journalEntry("0003").when);
+});
 
 test("0003 supprime l'ancien modèle sans le renommer", () => {
   const sql = migrationSql("0003");
@@ -207,6 +223,7 @@ test("une base vierge et une base déjà en 0002 migrent vers le même schéma",
   try {
     await migrate(drizzle({ client: virgin }), { migrationsFolder });
     await assertTargetSchema(virgin);
+    await assertDisambiguationColumn(virgin);
   } finally {
     await virgin.end();
     await dropMigrationDatabase();
@@ -241,6 +258,7 @@ test("une base vierge et une base déjà en 0002 migrent vers le même schéma",
 
     await migrate(drizzle({ client: upgrade }), { migrationsFolder });
     await assertTargetSchema(upgrade);
+    await assertDisambiguationColumn(upgrade);
 
     const journal = await upgrade.query<{ created_at: string }>(
       "SELECT created_at FROM drizzle.__drizzle_migrations ORDER BY created_at",
@@ -248,9 +266,56 @@ test("une base vierge et une base déjà en 0002 migrent vers le même schéma",
     expect(journal.rows.map((row) => Number(row.created_at))).toEqual([
       applied.when,
       journalEntry("0003").when,
+      journalEntry("0004").when,
     ]);
   } finally {
     await upgrade.end();
+    await dropMigrationDatabase();
+  }
+});
+
+test("une base déjà en 0003 ne reçoit que 0004", async () => {
+  await recreateMigrationDatabase();
+  const pool = new Pool({
+    connectionString: migrationDatabaseUrl(),
+    max: 1,
+    connectionTimeoutMillis: 5_000,
+  });
+
+  try {
+    await applySql(pool, migrationSql("0000"));
+    await applySql(pool, migrationSql("0001"));
+    await applySql(pool, migrationSql("0002"));
+    await applySql(pool, migrationSql("0003"));
+
+    const applied = journalEntry("0003");
+    const hash = createHash("sha256").update(migrationSql("0003")).digest("hex");
+    await pool.query("CREATE SCHEMA IF NOT EXISTS drizzle");
+    await pool.query(
+      `CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
+        id SERIAL PRIMARY KEY,
+        hash text NOT NULL,
+        created_at bigint
+      )`,
+    );
+    await pool.query(
+      `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ($1, $2)`,
+      [hash, applied.when],
+    );
+
+    await migrate(drizzle({ client: pool }), { migrationsFolder });
+    await assertTargetSchema(pool);
+    await assertDisambiguationColumn(pool);
+
+    const journal = await pool.query<{ created_at: string }>(
+      "SELECT created_at FROM drizzle.__drizzle_migrations ORDER BY created_at",
+    );
+    expect(journal.rows.map((row) => Number(row.created_at))).toEqual([
+      applied.when,
+      journalEntry("0004").when,
+    ]);
+  } finally {
+    await pool.end();
     await dropMigrationDatabase();
   }
 });

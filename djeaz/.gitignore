@@ -43,3 +43,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# reprise de l'import musical, hors dépôt
+.music-import-checkpoint.json
+.music-import-checkpoint.json.tmp
+music-import-checkpoint.json
+music-import-checkpoint.json.tmp
