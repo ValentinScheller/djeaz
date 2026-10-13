@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 import { DashboardNav } from "./dashboard-nav";
-import { DashboardUserMenu } from "./dashboard-user-menu";
+import { DashboardUserMenu, type DashboardUserIdentity } from "./dashboard-user-menu";
 
-export function DashboardMobileNav() {
+export function DashboardMobileNav({ user }: { user: DashboardUserIdentity }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -36,7 +36,7 @@ export function DashboardMobileNav() {
           <DashboardNav onNavigate={() => setOpen(false)} />
         </div>
         <div className="mt-auto px-4 pb-4">
-          <DashboardUserMenu />
+          <DashboardUserMenu user={user} />
         </div>
       </SheetContent>
     </Sheet>

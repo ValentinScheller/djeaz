@@ -104,7 +104,7 @@ pnpm dev
 
 Next.js sert l'application sur [http://localhost:3000](http://localhost:3000).
 
-En place : page d'accueil, Better Auth (inscription sur `/sign-up`, connexion sur `/sign-in`, déconnexion, sessions, nom d'artiste `artistName`), protection serveur des espaces privés (`/dashboard`, `/catalog`, `/settings`), catalogue vide créé à l'inscription. La gestion du catalogue, les événements et le sondage ne sont pas encore implémentés.
+En place : page d'accueil, Better Auth (inscription sur `/sign-up`, connexion sur `/sign-in`, déconnexion, sessions, nom d'artiste `artistName`), protection serveur des espaces privés (`/dashboard`, `/catalog`, `/settings`), catalogue vide créé à l'inscription. La sidebar du dashboard affiche le nom d'artiste et l'e-mail de la session. `/dashboard` indique qu'aucun événement n'existe encore. La gestion du catalogue, la création d'événements et le sondage ne sont pas encore implémentés.
 
 ## Qualité et tests
 
@@ -135,4 +135,4 @@ GitHub Actions (`.github/workflows/ci.yml`) s'exécute à chaque push sur `devel
 
 ## État du projet
 
-P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.7 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale, catalogue vide, isolation multi-DJ et seed synthétique) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.
+P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.8 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale, catalogue vide, isolation multi-DJ, seed synthétique et dashboard connecté) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.

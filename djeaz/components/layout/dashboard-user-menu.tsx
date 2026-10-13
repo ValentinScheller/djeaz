@@ -19,16 +19,14 @@ import { signOutAction } from "@/features/auth/actions";
 import { initialSignOutState } from "@/features/auth/form-state";
 import { cn } from "cn";
 
-/**
- * Identité synthétique, locale à la coque.
- * P2.8 la remplacera par la session Better Auth.
- */
-const PLACEHOLDER_USER = {
-  name: "DJ Démo",
-  email: "dj@example.test",
-} as const;
+/** Identité publique issue de la session. Le nom / prénom privé n'y figure pas. */
+export type DashboardUserIdentity = {
+  artistName: string;
+  email: string;
+};
 
 type DashboardUserMenuProps = {
+  user: DashboardUserIdentity;
   /** Libellé visible seulement à partir de `lg`. L'infobulle couvre l'état compact. */
   responsive?: boolean;
 };
@@ -66,27 +64,53 @@ function SignOutForm() {
   );
 }
 
-export function DashboardUserMenu({ responsive = false }: DashboardUserMenuProps) {
+function IdentityLines({
+  user,
+  nameClassName,
+  emailClassName,
+}: {
+  user: DashboardUserIdentity;
+  nameClassName?: string;
+  emailClassName?: string;
+}) {
+  return (
+    <span className="flex min-w-0 max-w-full flex-col items-start text-left">
+      <span
+        title={user.artistName}
+        className={cn("max-w-full truncate font-semibold", nameClassName)}
+      >
+        {user.artistName}
+      </span>
+      <span
+        title={user.email}
+        className={cn(
+          "max-w-full truncate text-sm font-normal text-text-secondary",
+          emailClassName,
+        )}
+      >
+        {user.email}
+      </span>
+    </span>
+  );
+}
+
+export function DashboardUserMenu({ user, responsive = false }: DashboardUserMenuProps) {
   const trigger = (
     <DropdownMenuTrigger
       render={
-        <Button variant="ghost" className="h-auto min-h-11 w-full min-w-0 justify-start px-2" />
+        <Button
+          variant="ghost"
+          aria-label={`${user.artistName}, ${user.email}`}
+          className="h-auto min-h-11 w-full min-w-0 justify-start px-2"
+        />
       }
     >
       <CircleUserIcon aria-hidden="true" className="size-5 shrink-0" />
-      <span className="flex min-w-0 flex-col items-start text-left">
-        <span className={cn("truncate font-semibold", responsive && "max-lg:sr-only")}>
-          {PLACEHOLDER_USER.name}
-        </span>
-        <span
-          className={cn(
-            "max-w-full truncate text-sm font-normal text-text-secondary",
-            responsive ? "hidden lg:block" : "block",
-          )}
-        >
-          {PLACEHOLDER_USER.email}
-        </span>
-      </span>
+      <IdentityLines
+        user={user}
+        nameClassName={responsive ? "max-lg:sr-only" : undefined}
+        emailClassName={responsive ? "max-lg:sr-only lg:block" : "block"}
+      />
     </DropdownMenuTrigger>
   );
 
@@ -96,21 +120,23 @@ export function DashboardUserMenu({ responsive = false }: DashboardUserMenuProps
         <Tooltip>
           <TooltipTrigger render={trigger} />
           <TooltipContent side="right" sideOffset={8} className="lg:hidden">
-            {PLACEHOLDER_USER.name}
+            <span className="flex max-w-xs min-w-0 flex-col gap-0.5 text-left">
+              <span className="font-semibold wrap-break-word">{user.artistName}</span>
+              <span className="wrap-break-word">{user.email}</span>
+            </span>
           </TooltipContent>
         </Tooltip>
       ) : (
         trigger
       )}
-      <DropdownMenuContent side="top" align="start" className="min-w-56">
+      <DropdownMenuContent
+        side="top"
+        align="start"
+        className="w-64 max-w-[calc(100vw-2rem)] min-w-56"
+      >
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="font-normal">
-            <span className="block truncate text-sm font-semibold text-text">
-              {PLACEHOLDER_USER.name}
-            </span>
-            <span className="block truncate text-sm text-text-secondary">
-              {PLACEHOLDER_USER.email}
-            </span>
+          <DropdownMenuLabel className="min-w-0 font-normal">
+            <IdentityLines user={user} nameClassName="text-sm text-text" emailClassName="block" />
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

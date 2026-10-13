@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { EmptyState } from "@/components/states/empty-state";
 import { requirePageSession } from "@/features/auth/session.server";
 
 export const metadata: Metadata = {
@@ -12,9 +13,10 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-2">
       <h1 className="text-xl font-semibold">Dashboard</h1>
-      <p className="max-w-prose text-text-secondary">
-        Les événements seront disponibles dans une prochaine étape.
-      </p>
+      <EmptyState
+        title="Aucun événement"
+        description="Vous n'avez pas encore d'événement. Ils apparaîtront ici lorsque vous pourrez en créer."
+      />
     </div>
   );
 }

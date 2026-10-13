@@ -29,10 +29,15 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-function renderDashboard() {
+const user = {
+  artistName: "DJ Nova",
+  email: "nova@example.com",
+};
+
+function renderDashboard(identity = user) {
   return render(
     <TooltipProvider>
-      <DashboardShell>
+      <DashboardShell user={identity}>
         <p>Contenu</p>
       </DashboardShell>
     </TooltipProvider>,
@@ -43,7 +48,7 @@ beforeEach(() => {
   navigation.pathname = "/dashboard";
 });
 
-test("la navigation indique la page active et l'identité factice", () => {
+test("la navigation indique la page active et l'identité de session", () => {
   navigation.pathname = "/catalog";
   renderDashboard();
 
@@ -52,10 +57,28 @@ test("la navigation indique la page active et l'identité factice", () => {
   expect(screen.getByRole("link", { name: "Paramètres" })).not.toHaveAttribute("aria-current");
   expect(screen.getByRole("link", { name: "Catalogue" })).toHaveAttribute("href", "/catalog");
   expect(document.querySelector('img[src="/mascotte.svg"]')).toHaveAttribute("alt", "");
-  expect(screen.getByRole("button", { name: /DJ Démo/ })).toBeInTheDocument();
-  expect(screen.getByText("dj@example.test")).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("button", { name: /DJ Démo/ }));
+  const account = screen.getByRole("button", { name: `${user.artistName}, ${user.email}` });
+  expect(screen.queryByText("DJ Démo")).not.toBeInTheDocument();
+
+  fireEvent.click(account);
+  expect(screen.getByRole("menuitem", { name: "Déconnexion" })).toBeEnabled();
+});
+
+test("un nom d'artiste et un e-mail longs restent accessibles", () => {
+  const identity = {
+    artistName: "A".repeat(80),
+    email: `${"boite-tres-longue".repeat(4)}@example.com`,
+  };
+  renderDashboard(identity);
+
+  const account = screen.getByRole("button", {
+    name: `${identity.artistName}, ${identity.email}`,
+  });
+  expect(screen.getAllByTitle(identity.artistName).length).toBeGreaterThan(0);
+  expect(screen.getAllByTitle(identity.email).length).toBeGreaterThan(0);
+
+  fireEvent.click(account);
   expect(screen.getByRole("menuitem", { name: "Déconnexion" })).toBeEnabled();
 });
 
@@ -76,7 +99,9 @@ test("le tiroir mobile s'ouvre, expose la navigation et se ferme", () => {
     "aria-current",
   );
   expect(within(dialog).getByRole("link", { name: "Paramètres" })).toBeInTheDocument();
-  expect(within(dialog).getByRole("button", { name: /DJ Démo/ })).toBeInTheDocument();
+  expect(
+    within(dialog).getByRole("button", { name: `${user.artistName}, ${user.email}` }),
+  ).toBeInTheDocument();
 
   fireEvent.click(within(dialog).getByRole("button", { name: "Fermer" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

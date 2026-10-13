@@ -89,6 +89,19 @@ test.each([
   expect(ensureCatalogForUser).toHaveBeenCalledWith("user-from-session");
 });
 
+test("le dashboard authentifié affiche un état vide sans événement", async () => {
+  getSession.mockResolvedValue(session);
+
+  render(await DashboardPage());
+
+  expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Aucun événement" })).toBeInTheDocument();
+  expect(screen.getByText(/pas encore d'événement/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Créer un événement/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  expect(screen.queryByText("DJ Démo")).not.toBeInTheDocument();
+});
+
 test("le catalogue vide invite à préparer la première catégorie", async () => {
   getSession.mockResolvedValue(session);
 

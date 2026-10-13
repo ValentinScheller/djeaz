@@ -5,9 +5,9 @@ import { Mascot } from "@/components/brand/mascot";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import { DashboardNav } from "./dashboard-nav";
-import { DashboardUserMenu } from "./dashboard-user-menu";
+import { DashboardUserMenu, type DashboardUserIdentity } from "./dashboard-user-menu";
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ user }: { user: DashboardUserIdentity }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-18 flex-col border-r border-border bg-surface shadow-dashboard md:flex lg:w-64">
       <div className="flex h-dvh min-h-0 flex-col gap-4 overflow-y-auto p-2 lg:p-4">
@@ -26,7 +26,7 @@ export function DashboardSidebar() {
           <div className="hidden min-w-0 lg:block">
             <ThemeToggle />
           </div>
-          <DashboardUserMenu responsive />
+          <DashboardUserMenu user={user} responsive />
         </div>
       </div>
     </aside>
