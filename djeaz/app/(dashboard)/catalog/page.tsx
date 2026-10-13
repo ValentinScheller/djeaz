@@ -5,6 +5,7 @@ import {
   addExternalTrackAction,
   addLocalTrackAction,
   createCategoryAction,
+  deleteCategoryAction,
   moveCatalogTrackAction,
   removeCatalogTrackAction,
   reorderCatalogTrackAction,
@@ -22,19 +23,17 @@ export default async function CatalogPage() {
   const workspace = await loadCatalogWorkspace(session.user.id);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Catalogue</h1>
-      <CatalogManager
-        workspace={workspace}
-        actions={{
-          createCategory: createCategoryAction,
-          addLocal: addLocalTrackAction,
-          addExternal: addExternalTrackAction,
-          remove: removeCatalogTrackAction,
-          move: moveCatalogTrackAction,
-          reorder: reorderCatalogTrackAction,
-        }}
-      />
-    </div>
+    <CatalogManager
+      workspace={workspace}
+      actions={{
+        createCategory: createCategoryAction,
+        deleteCategory: deleteCategoryAction,
+        addLocal: addLocalTrackAction,
+        addExternal: addExternalTrackAction,
+        remove: removeCatalogTrackAction,
+        move: moveCatalogTrackAction,
+        reorder: reorderCatalogTrackAction,
+      }}
+    />
   );
 }

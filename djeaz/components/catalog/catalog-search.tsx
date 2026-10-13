@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 
 import { TrackArtwork } from "@/components/catalog/track-artwork";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import type { ActionResult } from "@/lib/action-result";
 type CatalogSearchProps = {
   categoryId: string;
   disabled: boolean;
+  inputRef?: Ref<HTMLInputElement>;
+  onAdded?: () => void;
   onAddLocal: (musicTrackId: string) => Promise<ActionResult<{ associationId: string }>>;
   onAddExternal: (externalId: string) => Promise<ActionResult<{ associationId: string }>>;
 };
@@ -61,6 +63,8 @@ function HitLine({
 export function CatalogSearch({
   categoryId,
   disabled,
+  inputRef,
+  onAdded,
   onAddLocal,
   onAddExternal,
 }: CatalogSearchProps) {
@@ -178,24 +182,44 @@ export function CatalogSearch({
     }
   }
 
+  function resetSearch() {
+    localGeneration.current += 1;
+    externalGeneration.current += 1;
+    setQuery("");
+    setLocalResults([]);
+    setLocalState("idle");
+    setLocalError(null);
+    setExternalResults(null);
+    setExternalState("idle");
+    setExternalError(null);
+    setActionError(null);
+    setAddingId(null);
+  }
+
   async function addLocal(track: LocalTrackHit) {
     setAddingId(track.id);
     setActionError(null);
     const result = await onAddLocal(track.id);
-    setAddingId(null);
     if (!result.ok) {
+      setAddingId(null);
       setActionError(result.error.message);
+      return;
     }
+    resetSearch();
+    onAdded?.();
   }
 
   async function addExternal(candidate: ExternalCandidate) {
     setAddingId(candidate.externalId);
     setActionError(null);
     const result = await onAddExternal(candidate.externalId);
-    setAddingId(null);
     if (!result.ok) {
+      setAddingId(null);
       setActionError(result.error.message);
+      return;
     }
+    resetSearch();
+    onAdded?.();
   }
 
   const canSearchWider = parseMusicQuery(query).ok && externalState !== "loading" && !disabled;
@@ -205,6 +229,7 @@ export function CatalogSearch({
       <div className="flex flex-col gap-2">
         <Label htmlFor={`catalog-search-${categoryId}`}>Rechercher un morceau</Label>
         <Input
+          ref={inputRef}
           id={`catalog-search-${categoryId}`}
           value={query}
           maxLength={200}

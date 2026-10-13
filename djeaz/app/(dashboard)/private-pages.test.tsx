@@ -36,6 +36,7 @@ vi.mock("@/features/catalog/view.server", () => ({
 
 vi.mock("@/features/catalog/actions", () => ({
   createCategoryAction: vi.fn(),
+  deleteCategoryAction: vi.fn(),
   addLocalTrackAction: vi.fn(),
   addExternalTrackAction: vi.fn(),
   removeCatalogTrackAction: vi.fn(),
@@ -89,7 +90,7 @@ test.each([
 
 test.each([
   ["Dashboard", DashboardPage],
-  ["Catalogue", CatalogPage],
+  ["Catégories", CatalogPage],
   ["Paramètres", SettingsPage],
 ] as const)("une session valide affiche %s", async (heading, Page) => {
   getSession.mockResolvedValue(session);

@@ -250,3 +250,65 @@ test("une réponse locale obsolète ne remplace pas la requête plus récente", 
   expect(screen.getByText("Récent")).toBeInTheDocument();
   expect(screen.queryByText("Ancien")).not.toBeInTheDocument();
 });
+
+test("conserve la recherche si l'ajout échoue et la réinitialise après un ajout réussi", async () => {
+  vi.useFakeTimers();
+  const fetchMock = vi.fn(async () => ({
+    json: async () => ({
+      ok: true,
+      data: {
+        results: [
+          {
+            id: "track-1",
+            title: "Bohemian Rhapsody",
+            artist: "Queen",
+            albumTitle: null,
+            artworkUrl: null,
+          },
+        ],
+      },
+    }),
+  }));
+  vi.stubGlobal("fetch", fetchMock);
+  const onAddLocal = vi
+    .fn()
+    .mockResolvedValueOnce({
+      ok: false,
+      error: { code: "CONFLICT", message: "Ce morceau est déjà dans votre catalogue." },
+    })
+    .mockResolvedValueOnce({ ok: true, data: { associationId: "assoc-1" } });
+  const onAdded = vi.fn();
+
+  render(
+    <CatalogSearch
+      categoryId="category-1"
+      disabled={false}
+      onAddLocal={onAddLocal}
+      onAddExternal={vi.fn()}
+      onAdded={onAdded}
+    />,
+  );
+
+  const input = screen.getByLabelText("Rechercher un morceau");
+  fireEvent.change(input, { target: { value: "queen" } });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(300);
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: "Ajouter Bohemian Rhapsody" }));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(0);
+  });
+  expect(onAdded).not.toHaveBeenCalled();
+  expect(input).toHaveValue("queen");
+  expect(screen.getByText("Bohemian Rhapsody")).toBeInTheDocument();
+  expect(screen.getByText("Ce morceau est déjà dans votre catalogue.")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Ajouter Bohemian Rhapsody" }));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(0);
+  });
+  expect(onAdded).toHaveBeenCalledOnce();
+  expect(input).toHaveValue("");
+  expect(screen.queryByText("Bohemian Rhapsody")).not.toBeInTheDocument();
+});

@@ -151,6 +151,36 @@ export async function createCategoryForUser(
   });
 }
 
+export async function deleteCategoryForUser(
+  userId: string,
+  categoryId: string,
+): Promise<ActionResult<CatalogChange>> {
+  return run(async (tx) => {
+    const catalog = await lockCatalog(tx, userId);
+    const category = await requireCategory(tx, catalog.id, categoryId);
+
+    await tx
+      .delete(catalogTracks)
+      .where(
+        and(eq(catalogTracks.catalogId, catalog.id), eq(catalogTracks.categoryId, category.id)),
+      );
+
+    const deleted = await tx
+      .delete(catalogCategories)
+      .where(
+        and(eq(catalogCategories.id, category.id), eq(catalogCategories.catalogId, catalog.id)),
+      )
+      .returning({ id: catalogCategories.id });
+
+    if (deleted.length === 0) {
+      notFound();
+    }
+
+    await bumpRevision(tx, catalog.id);
+    return { changed: true };
+  });
+}
+
 async function attachTrack(
   tx: MusicTx,
   userId: string,

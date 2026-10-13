@@ -38,6 +38,18 @@ export async function createCategoryAction(
   return publish(await createCategoryForUser(session.data.userId, name));
 }
 
+export async function deleteCategoryAction(
+  categoryId: string,
+): Promise<ActionResult<CatalogChange>> {
+  const session = await requireUserId();
+  if (!session.ok) {
+    return session;
+  }
+
+  const { deleteCategoryForUser } = await import("./mutations.server");
+  return publish(await deleteCategoryForUser(session.data.userId, categoryId));
+}
+
 export async function addLocalTrackAction(
   categoryId: string,
   musicTrackId: string,

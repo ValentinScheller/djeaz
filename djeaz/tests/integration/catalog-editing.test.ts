@@ -8,6 +8,7 @@ import { catalogCategories, catalogs, catalogTracks, musicTracks, user } from "@
 import {
   addLocalTrackForUser,
   createCategoryForUser,
+  deleteCategoryForUser,
   moveCatalogTrackForUser,
   removeCatalogTrackForUser,
   reorderCatalogTrackForUser,
@@ -194,6 +195,70 @@ test("deux ordres identiques ne changent pas la révision si la séquence reste 
     .where(eq(catalogTracks.categoryId, category.data.categoryId))
     .orderBy(asc(catalogTracks.displayOrder), asc(catalogTracks.id));
   expect(rowsAfter).toEqual(rowsBefore);
+});
+
+test("supprime une catégorie, ses associations, et conserve le morceau global", async () => {
+  await insertUser("dj-delete");
+  const missing = await deleteCategoryForUser("dj-delete", "00000000-0000-4000-8000-000000000001");
+  expect(missing).toMatchObject({ ok: false, error: { code: "NOT_FOUND" } });
+  expect(await revisionOf("dj-delete")).toBe(0);
+
+  const first = await createCategoryForUser("dj-delete", "Cocktail");
+  const second = await createCategoryForUser("dj-delete", "Dancefloor");
+  const removedTrack = await insertTrack("Nuit retirée");
+  const keptTrack = await insertTrack("Velours gardé");
+  if (!first.ok || !second.ok) {
+    throw new Error("Catégories attendues.");
+  }
+
+  const added = await addLocalTrackForUser("dj-delete", first.data.categoryId, removedTrack.id);
+  const kept = await addLocalTrackForUser("dj-delete", second.data.categoryId, keptTrack.id);
+  if (!added.ok || !kept.ok) {
+    throw new Error("Associations attendues.");
+  }
+  const before = await revisionOf("dj-delete");
+
+  const deleted = await deleteCategoryForUser("dj-delete", first.data.categoryId);
+  expect(deleted.ok && deleted.data.changed).toBe(true);
+  expect(await revisionOf("dj-delete")).toBe(before + 1);
+
+  const categories = await db.select({ name: catalogCategories.name }).from(catalogCategories);
+  expect(categories.map((row) => row.name)).toEqual(["Dancefloor"]);
+  const associations = await db.select().from(catalogTracks);
+  expect(associations).toHaveLength(1);
+  expect(associations[0]?.categoryId).toBe(second.data.categoryId);
+  expect(associations[0]?.musicTrackId).toBe(keptTrack.id);
+  expect(
+    await db.select().from(musicTracks).where(eq(musicTracks.id, removedTrack.id)),
+  ).toHaveLength(1);
+
+  const again = await deleteCategoryForUser("dj-delete", first.data.categoryId);
+  expect(again).toMatchObject({ ok: false, error: { code: "NOT_FOUND" } });
+  expect(await revisionOf("dj-delete")).toBe(before + 1);
+});
+
+test("supprimer la catégorie d'un autre DJ renvoie NOT_FOUND", async () => {
+  await insertUser("dj-del-a");
+  await insertUser("dj-del-b");
+  const category = await createCategoryForUser("dj-del-a", "Privée");
+  const track = await insertTrack("Secret conservé");
+  if (!category.ok) {
+    throw new Error("Catégorie attendue.");
+  }
+  const added = await addLocalTrackForUser("dj-del-a", category.data.categoryId, track.id);
+  if (!added.ok) {
+    throw new Error(added.error.message);
+  }
+  const revisionA = await revisionOf("dj-del-a");
+  const revisionB = await revisionOf("dj-del-b");
+
+  const foreign = await deleteCategoryForUser("dj-del-b", category.data.categoryId);
+  expect(foreign).toMatchObject({ ok: false, error: { code: "NOT_FOUND" } });
+  expect(await revisionOf("dj-del-a")).toBe(revisionA);
+  expect(await revisionOf("dj-del-b")).toBe(revisionB);
+  expect(await db.select().from(catalogCategories)).toHaveLength(1);
+  expect(await db.select().from(catalogTracks)).toHaveLength(1);
+  expect(await db.select().from(musicTracks).where(eq(musicTracks.id, track.id))).toHaveLength(1);
 });
 
 test("une catégorie d'un autre DJ est introuvable et la clé composite tient", async () => {
