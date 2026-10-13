@@ -75,6 +75,27 @@ pnpm db:migrate
 
 `db:generate` écrit les migrations dans `drizzle/` à partir de `db/schema.ts`. `db:migrate` les applique sur la base indiquée par `DATABASE_MIGRATION_URL`.
 
+## Seed synthétique
+
+```bash
+pnpm db:seed
+```
+
+La commande alimente la base de `DATABASE_URL` pour le développement et les previews. Elle crée un DJ de démonstration, son catalogue, quelques genres et morceaux globaux fictifs, puis quelques catégories et associations. Tout est synthétique : aucun catalogue réel, aucun fournisseur externe.
+
+Elle est idempotente. La relancer ne duplique pas les fixtures et ne réinitialise ni les utilisateurs, ni les catalogues, ni `revision`.
+
+Compte de démonstration, réservé au développement :
+
+| Champ         | Valeur               |
+| ------------- | -------------------- |
+| E-mail        | `demo@djeaz.example` |
+| Mot de passe  | `demo-djeaz-2026`    |
+| Nom           | `Compte Démo`        |
+| Nom d'artiste | `DJ Démo`            |
+
+Si ce compte existe déjà, le seed ne le recrée pas et ne change pas son mot de passe. Il n'est pas lancé au démarrage, par les migrations, ni en CI.
+
 ## Développement
 
 ```bash
@@ -114,4 +135,4 @@ GitHub Actions (`.github/workflows/ci.yml`) s'exécute à chaque push sur `devel
 
 ## État du projet
 
-P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.6 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale, catalogue vide et isolation multi-DJ) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.
+P0 (socle technique), P1 (identité visuelle) et P2.1 à P2.7 (données initiales, Better Auth, garde serveur, pages d'inscription et de connexion, bibliothèque musicale, catalogue vide, isolation multi-DJ et seed synthétique) sont livrées. Les fonctionnalités métier suivantes arrivent selon `documentation/ROADMAP.md`.
