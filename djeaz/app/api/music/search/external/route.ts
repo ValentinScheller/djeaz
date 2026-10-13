@@ -1,5 +1,4 @@
 import { getAuthenticatedSession } from "@/features/auth/session.server";
-import { searchExternalRecordings } from "@/features/music/search.server";
 import { actionError, type ActionErrorCode, type ActionResult } from "@/lib/action-result";
 
 const STATUS: Record<ActionErrorCode, number> = {
@@ -55,5 +54,7 @@ export async function POST(request: Request): Promise<Response> {
       ? body.query
       : "";
 
+  // Import différé : charger la route pendant `next build` ne doit pas ouvrir la base.
+  const { searchExternalRecordings } = await import("@/features/music/search.server");
   return jsonResult(await searchExternalRecordings(query));
 }

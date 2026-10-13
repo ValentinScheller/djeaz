@@ -9,7 +9,6 @@ import {
   removeCatalogTrackAction,
   reorderCatalogTrackAction,
 } from "@/features/catalog/actions";
-import { loadCatalogWorkspace } from "@/features/catalog/view.server";
 import { requirePageSession } from "@/features/auth/session.server";
 
 export const metadata: Metadata = {
@@ -18,6 +17,8 @@ export const metadata: Metadata = {
 
 export default async function CatalogPage() {
   const session = await requirePageSession("/catalog");
+  // Import différé : charger la page pendant `next build` ne doit pas ouvrir la base.
+  const { loadCatalogWorkspace } = await import("@/features/catalog/view.server");
   const workspace = await loadCatalogWorkspace(session.user.id);
 
   return (

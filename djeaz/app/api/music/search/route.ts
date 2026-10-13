@@ -1,5 +1,4 @@
 import { getAuthenticatedSession } from "@/features/auth/session.server";
-import { searchLocalTracks } from "@/features/music/search.server";
 import { actionError, type ActionErrorCode, type ActionResult } from "@/lib/action-result";
 
 const STATUS: Record<ActionErrorCode, number> = {
@@ -48,5 +47,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const query = new URL(request.url).searchParams.get("q") ?? "";
+  // Import différé : charger la route pendant `next build` ne doit pas ouvrir la base.
+  const { searchLocalTracks } = await import("@/features/music/search.server");
   return jsonResult(await searchLocalTracks(query));
 }
